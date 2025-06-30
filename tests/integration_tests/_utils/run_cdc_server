@@ -23,7 +23,7 @@ addr_url="127.0.0.1:8300"
 
 pd_addr="--pd http://$UP_PD_HOST_1:$UP_PD_PORT_1"
 if [ "$IS_NEXT_GEN" = "1" ]; then
-    pd_addr="--pd http://${UP_PD_HOST_1}:${CDC_PD_PORT}"
+	pd_addr="--pd http://${UP_PD_HOST_1}:${CDC_PD_PORT}"
 fi
 
 pwd=$(pwd)
@@ -123,9 +123,9 @@ cd $workdir
 
 os=$(uname -s)
 if [[ "$os" == "Darwin" ]]; then
-    pid=$(pgrep -f "run_cdc_server" | head -n 1)
+	pid=$(pgrep -f "run_cdc_server" | head -n 1)
 else
-    pid=$(ps -C run_cdc_server -o pid= | tr -d '[:space:]')
+	pid=$(ps -C run_cdc_server -o pid= | tr -d '[:space:]')
 fi
 
 # Uncomment to turn on grpc versbose log.
@@ -200,7 +200,7 @@ done
 
 # for the next gen, we should create they keyspace info to replication worker
 if [ "$IS_NEXT_GEN" = "1" ]; then
-    curl -X POST "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/keyspace?keyspace_id=1" -H 'Content-Type: Application/json' -d "{\"pd_url\": \"http://${UP_PD_HOST_1}:${CDC_PD_PORT}\", \"cdc_addr\": \"$addr_url\"}"
+	curl -X POST "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/keyspace?keyspace_id=1" -H 'Content-Type: Application/json' -d "{\"pd_url\": \"http://${UP_PD_HOST_1}:${CDC_PD_PORT}\", \"cdc_addr\": \"$addr_url\"}"
 fi
 
 set +x

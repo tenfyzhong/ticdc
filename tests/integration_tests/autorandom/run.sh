@@ -28,7 +28,7 @@ function run() {
 	*) SINK_URI="mysql://normal:123456@127.0.0.1:3306/" ;;
 	esac
 	SINK_PARA="{\"changefeed_id\":\"autorandom\", \"sink_uri\":\"$SINK_URI\"}"
-    create_changefeed -c "autorandom" --sink-uri="$SINK_URI"
+	create_changefeed -c "autorandom" --sink-uri="$SINK_URI"
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR $SINK_URI ;;
 	storage) run_storage_consumer $WORK_DIR $SINK_URI "" "" ;;

@@ -34,11 +34,11 @@ function prepare() {
 	# run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI"
 	SINK_PARA="{\"replica_config\":{\"force_replicate\":true}, \"changefeed_id\":\"tidb-mysql-test\", \"sink_uri\":\"$SINK_URI\", \"start_ts\":$start_ts}"
 
-    if [ "$IS_NEXT_GEN" = 1 ]; then
-        curl -X POST -H "Content-type: appliction/json" "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/api/v2/changefeeds?keyspace_id=1" -d "$SINK_PARA"
-    else
-	    curl -X POST -H "Content-type:application/json" "http://$CDC_DEFAULT_HOST:$CDC_DEFAULT_PORT/api/v2/changefeeds" -d "$SINK_PARA"
-    fi
+	if [ "$IS_NEXT_GEN" = 1 ]; then
+		curl -X POST -H "Content-type: appliction/json" "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/api/v2/changefeeds?keyspace_id=1" -d "$SINK_PARA"
+	else
+		curl -X POST -H "Content-type:application/json" "http://$CDC_DEFAULT_HOST:$CDC_DEFAULT_PORT/api/v2/changefeeds" -d "$SINK_PARA"
+	fi
 
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR "kafka://127.0.0.1:9092/$TOPIC_NAME?protocol=open-protocol&partition-num=4&version=${KAFKA_VERSION}&max-message-bytes=10485760" ;;

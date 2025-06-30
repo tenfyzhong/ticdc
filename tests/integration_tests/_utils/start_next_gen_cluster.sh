@@ -5,18 +5,18 @@
 source "$CUR/../_utils/test_prepare"
 
 check_bin() {
-    if [ ! -f "$1" ]; then
-        echo "Error: $1 is not a file" >&2
-        exit 1
-    fi
-    if [ ! -x "$1" ]; then
-        echo "Error: $1 is not executable" >&2
-        exit 1
-    fi
+	if [ ! -f "$1" ]; then
+		echo "Error: $1 is not a file" >&2
+		exit 1
+	fi
+	if [ ! -x "$1" ]; then
+		echo "Error: $1 is not executable" >&2
+		exit 1
+	fi
 }
 
 show_help() {
-    cat <<EOF
+	cat <<EOF
 Usage: $0 [OPTIONS]
 
 Options:
@@ -45,7 +45,7 @@ EOF
 }
 
 dump_variables() {
-    cat > "$OUT_DIR/next_gen.env" <<EOF
+	cat >"$OUT_DIR/next_gen.env" <<EOF
 DB_BINPATH=$DB_BINPATH
 KV_BINPATH=$KV_BINPATH
 PD_BINPATH=$PD_BINPATH
@@ -70,70 +70,69 @@ UPSTREAM_TIUP_PID=$UPSTREAM_TIUP_PID
 CDC_PD_TIUP_PID=$CDC_PD_TIUP_PID
 DOWNSTREAM_TIUP_PID=$DOWNSTREAM_TIUP_PID
 EOF
-    echo "Variables dumped to $WORK_DIR/next_gen.env"
+	echo "Variables dumped to $WORK_DIR/next_gen.env"
 }
 
 check_port_available() {
-    local port=$1
-    local prompt=$2
-    while ! nc -z 127.0.0.1 "$port"; do
-        echo "$prompt"
-        sleep 1
-    done
+	local port=$1
+	local prompt=$2
+	while ! nc -z 127.0.0.1 "$port"; do
+		echo "$prompt"
+		sleep 1
+	done
 }
 
 # Parse command line arguments manually
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        --keyspace-name)
-            KEYSPACE_NAME="$2"
-            shift 2
-            ;;
-        --db.binpath)
-            DB_BINPATH="$2"
-            shift 2
-            ;;
-        --kv.binpath)
-            KV_BINPATH="$2"
-            shift 2
-            ;;
-        --pd.binpath)
-            PD_BINPATH="$2"
-            shift 2
-            ;;
-        --cse-ctl.binpath)
-            CSE_CTL_BINPATH="$2"
-            shift 2
-            ;;
-        --tikv-worker.binpath)
-            TIKV_WORKER_BINPATH="$2"
-            shift 2
-            ;;
-        --upstream-port-offset)
-            UPSTREAM_PORT_OFFSET="$2"
-            shift 2
-            ;;
-        --cdc-pd-port)
-            # this port is for pd which is used by cdc only
-            CDC_PD_PORT=$2
-            shift 2
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
+	case "$1" in
+	-h | --help)
+		show_help
+		exit 0
+		;;
+	--keyspace-name)
+		KEYSPACE_NAME="$2"
+		shift 2
+		;;
+	--db.binpath)
+		DB_BINPATH="$2"
+		shift 2
+		;;
+	--kv.binpath)
+		KV_BINPATH="$2"
+		shift 2
+		;;
+	--pd.binpath)
+		PD_BINPATH="$2"
+		shift 2
+		;;
+	--cse-ctl.binpath)
+		CSE_CTL_BINPATH="$2"
+		shift 2
+		;;
+	--tikv-worker.binpath)
+		TIKV_WORKER_BINPATH="$2"
+		shift 2
+		;;
+	--upstream-port-offset)
+		UPSTREAM_PORT_OFFSET="$2"
+		shift 2
+		;;
+	--cdc-pd-port)
+		# this port is for pd which is used by cdc only
+		CDC_PD_PORT=$2
+		shift 2
+		;;
+	*)
+		echo "Unknown option: $1"
+		exit 1
+		;;
+	esac
 done
 
 if [ -z "$WORK_DIR" ]; then
-    echo "Error: environment variable WORK_DIR is empty" >&2
-    exit 1
+	echo "Error: environment variable WORK_DIR is empty" >&2
+	exit 1
 fi
-
 
 PD_PORT=$((2379 + UPSTREAM_PORT_OFFSET))
 TIDB_PORT=$((4000 + UPSTREAM_PORT_OFFSET))
@@ -149,23 +148,22 @@ mkdir -p "$WORK_DIR"
 CLEANUP_SCRIPT="$(dirname "$0")/cleanup_next_gen_cluster.sh"
 [ -x "$CLEANUP_SCRIPT" ] && "$CLEANUP_SCRIPT"
 
-
 echo "Check minio container"
 if ! docker ps -a --filter "name=$MINIO_CONTAINER_NAME" | grep -q "$MINIO_CONTAINER_NAME"; then
-    echo "Deploy minio"
-    docker run -d \
-      --name "$MINIO_CONTAINER_NAME" \
-      -p "$MINIO_API_PORT:9000" \
-      -p "$MINIO_CONSOLE_PORT:9001" \
-      -e MINIO_ROOT_USER="$MINIO_ROOT_USER" \
-      -e MINIO_ROOT_PASSWORD="$MINIO_ROOT_PASSWORD" \
-      --restart unless-stopped \
-      minio/minio:RELEASE.2025-05-24T17-08-30Z \
-      server /data --console-address ":9001"
+	echo "Deploy minio"
+	docker run -d \
+		--name "$MINIO_CONTAINER_NAME" \
+		-p "$MINIO_API_PORT:9000" \
+		-p "$MINIO_CONSOLE_PORT:9001" \
+		-e MINIO_ROOT_USER="$MINIO_ROOT_USER" \
+		-e MINIO_ROOT_PASSWORD="$MINIO_ROOT_PASSWORD" \
+		--restart unless-stopped \
+		minio/minio:RELEASE.2025-05-24T17-08-30Z \
+		server /data --console-address ":9001"
 else
-    echo "MinIO container already exists, skipping creation"
-    # Ensure container is running
-    docker start "$MINIO_CONTAINER_NAME" || true
+	echo "MinIO container already exists, skipping creation"
+	# Ensure container is running
+	docker start "$MINIO_CONTAINER_NAME" || true
 fi
 
 check_port_available "$MINIO_API_PORT" "Wait for minio to be available"
@@ -175,17 +173,17 @@ sleep 1
 echo "Create bucket"
 mc alias set "$MINIO_MC_ALIAS" "http://localhost:$MINIO_API_PORT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>&1
 if ! mc ls "$MINIO_MC_ALIAS"/cse &>/dev/null; then
-    mc mb "$MINIO_MC_ALIAS"/cse
+	mc mb "$MINIO_MC_ALIAS"/cse
 else
-    echo "Bucket cse already exists, skipping creation"
+	echo "Bucket cse already exists, skipping creation"
 fi
 
-cat > "$WORK_DIR/pd.toml" <<EOF
+cat >"$WORK_DIR/pd.toml" <<EOF
 [keyspace]
 pre-alloc = ["$KEYSPACE_NAME"]
 EOF
 
-cat > "$WORK_DIR/tikv.toml" <<EOF
+cat >"$WORK_DIR/tikv.toml" <<EOF
 [storage]
 api-version = 2
 enable-ttl = true
@@ -205,23 +203,23 @@ target-file-size = "512MB"
 wal-chunk-target-file-size = "128MB"
 EOF
 
-cat > "$WORK_DIR/tidb.toml" <<EOF
+cat >"$WORK_DIR/tidb.toml" <<EOF
 keyspace-name = "$KEYSPACE_NAME"
 EOF
 
 echo "Start upstream cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG" \
-    --db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" \
-    --kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" \
-    --pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" \
-    --port-offset "$UPSTREAM_PORT_OFFSET" \
-    --tiflash 0 &
+	--db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" \
+	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" \
+	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" \
+	--port-offset "$UPSTREAM_PORT_OFFSET" \
+	--tiflash 0 &
 UPSTREAM_TIUP_PID=$!
 echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
 check_port_available "$TIDB_PORT" "Wait for upstream TiDB to be available"
 
 echo "run backup"
-cat > "$WORK_DIR/tikv_worker.toml" <<EOF
+cat >"$WORK_DIR/tikv_worker.toml" <<EOF
 data-dir = "$WORK_DIR/tiup-cluster/playground-serverless/br"
 addr = "127.0.0.1:5998"
 
@@ -238,16 +236,16 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-"$CSE_CTL_BINPATH"  backup --pd "127.0.0.1:$PD_PORT" --config "$WORK_DIR/tikv_worker.toml"  --lightweight --interval 0
+"$CSE_CTL_BINPATH" backup --pd "127.0.0.1:$PD_PORT" --config "$WORK_DIR/tikv_worker.toml" --lightweight --interval 0
 
 set -x
 echo "Start CDC PD cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_CDC_PD" \
-     --pd.port "$CDC_PD_PORT" \
-     --pd 1 \
-     --kv 0 \
-     --db 0 \
-     --tiflash 0 &
+	--pd.port "$CDC_PD_PORT" \
+	--pd 1 \
+	--kv 0 \
+	--db 0 \
+	--tiflash 0 &
 CDC_PD_TIUP_PID=$!
 echo "cdc pd tiup pid: $CDC_PD_TIUP_PID"
 sleep 10
@@ -255,7 +253,7 @@ check_port_available "$CDC_PD_PORT" "Wait for CDC PD to be available"
 set +x
 
 echo "deploy replication-worker"
-cat > "$WORK_DIR/replication_config.toml" << EOF
+cat >"$WORK_DIR/replication_config.toml" <<EOF
 data-dir = "$WORK_DIR/tiup-cluster/playground-serverless/br"
 
 [replication-worker]
@@ -274,13 +272,13 @@ s3-secret-key = "minioadmin"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml"  --pd-endpoints "127.0.0.1:$PD_PORT" &
+nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "127.0.0.1:$PD_PORT" &
 
 # Start a downstream TiDB
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_DOWNSTREAM" \
-    --pd.host "$DOWN_PD_HOST" --pd.port "$DOWN_PD_PORT" \
-    --kv.host "$DOWN_TIKV_HOST" --kv.port "$DOWN_TIKV_PORT" \
-    --db.host "$DOWN_TIDB_HOST" --db.port "$DOWN_TIDB_PORT" &
+	--pd.host "$DOWN_PD_HOST" --pd.port "$DOWN_PD_PORT" \
+	--kv.host "$DOWN_TIKV_HOST" --kv.port "$DOWN_TIKV_PORT" \
+	--db.host "$DOWN_TIDB_HOST" --db.port "$DOWN_TIDB_PORT" &
 DOWNSTREAM_TIUP_PID=$!
 echo "downstream tiup pid: $CDC_PD_TIUP_PID"
 check_port_available "$DOWN_TIDB_PORT" "Wait for downstream to be available"

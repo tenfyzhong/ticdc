@@ -15,9 +15,9 @@ while [ $# -ne 0 ]; do
 	--start-ts=*)
 		start_ts="${1#*=}"
 		;;
-    --target-ts=*)
-        target_ts="${1#*=}"
-        ;;
+	--target-ts=*)
+		target_ts="${1#*=}"
+		;;
 	-c)
 		shift
 		changefeed="$1"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ "$IS_NEXT_GEN" = "1" ]; then
-    start_next_gen_cluster.sh
+	start_next_gen_cluster.sh
 else
-    start_tidb_cluster_default $@
+	start_tidb_cluster_default $@
 fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ "$IS_NEXT_GEN" = "1" ]; then
-    cleanup_next_gen_cluster.sh
+	cleanup_next_gen_cluster.sh
 else
-    stop_tidb_cluster_default $@
+	stop_tidb_cluster_default $@
 fi
