@@ -48,7 +48,7 @@ function run() {
 
 	for i in $(seq 1 10); do
 		echo "Run $i test" # && read
-		pause_changefeed --changefeed-id=$changefeed_id --pd=$pd_addr
+		cdc cli changefeed pause --changefeed-id=$changefeed_id --pd=$pd_addr
 
 		for j in $(seq 1 $TABLE_COUNT); do
 			stmt="drop table changefeed_pause_resume.t$j"
@@ -65,7 +65,7 @@ function run() {
 			run_sql "$stmt" ${UP_TIDB_HOST} ${UP_TIDB_PORT}
 		done
 
-		resume_changefeed --changefeed-id=$changefeed_id --pd=$pd_addr
+		cdc cli changefeed resume --changefeed-id=$changefeed_id --pd=$pd_addr
 
 		check_sync_diff $WORK_DIR $CUR/conf/diff_config.toml
 
