@@ -45,7 +45,18 @@ fi
 
 SINK_PARA="{\"changefeed_id\":\"$changefeed\", \"start_ts\": $start_ts, \"target_ts\": $target_ts, \"sink_uri\":\"$sink_uri\", \"replica_config\":$replica_config}"
 if [ "$IS_NEXT_GEN" = 1 ]; then
-	curl -X POST -H "Content-type: appliction/json" "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/api/v2/changefeeds?keyspace_id=1" -d "$SINK_PARA"
+	data=$(curl -X POST -H "Content-type: appliction/json" "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/api/v2/changefeeds?keyspace_id=1" -d "$SINK_PARA")
+	if [ "$?" -ne 0 ]; then
+		exit 1
+	fi
 else
-	curl -X POST -H "Content-type:application/json" "$server/api/v2/changefeeds" -d "$SINK_PARA"
+	data=$(curl -X POST -H "Content-type:application/json" "$server/api/v2/changefeeds" -d "$SINK_PARA")
+	if [ "$?" -ne 0 ]; then
+		exit 1
+	fi
 fi
+id=$(echo $data | jq '.id')
+# compatibility with the output of `cdc cli changefeed create`
+echo "Create changefeed successfully!"
+echo "ID: $id"
+echo "Info: $data"
