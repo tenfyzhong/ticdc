@@ -200,7 +200,10 @@ done
 
 # for the next gen, we should create they keyspace info to replication worker
 if [ "$IS_NEXT_GEN" = "1" ]; then
-	curl -X POST "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/keyspace?keyspace_id=1" -H 'Content-Type: Application/json' -d "{\"pd_url\": \"http://${UP_PD_HOST_1}:${CDC_PD_PORT}\", \"cdc_addr\": \"$addr_url\"}"
+	if ! curl -X POST "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/keyspace?keyspace_id=1" -H 'Content-Type: Application/json' -d "{\"pd_url\": \"http://${UP_PD_HOST_1}:${CDC_PD_PORT}\", \"cdc_addr\": \"$addr_url\"}"; then
+		echo "init keyspace failed" >&2
+		exit 1
+	fi
 fi
 
 set +x
