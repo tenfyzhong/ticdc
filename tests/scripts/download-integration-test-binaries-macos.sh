@@ -119,7 +119,7 @@ if [ ! -x bin/sync_diff_inspector ]; then
 	tar -C bin/ -xzf bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz
 fi
 
-if [[ "disable_tidb" == "1" ]]; then
+if [[ "$disable_tidb" == "1" ]]; then
 	echo -e "${RED}You should copy the tidb binaries to the bin/ directory on your own.${NC}"
 	exit 0
 fi
