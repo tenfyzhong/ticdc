@@ -267,8 +267,8 @@ merged-store-id = 1024
 [dfs]
 prefix = "serverless"
 s3-endpoint = "http://127.0.0.1:$MINIO_API_PORT"
-s3-key-id = "minioadmin"
-s3-secret-key = "minioadmin"
+s3-key-id = "$MINIO_ROOT_USER"
+s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
