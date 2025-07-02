@@ -64,11 +64,13 @@ TIDB_VERSION=$TIDB_VERSION
 TIDB_PLAYGROUND_TAG=$TIDB_PLAYGROUND_TAG
 TIDB_PLAYGROUND_TAG_CDC_PD=$TIDB_PLAYGROUND_TAG_CDC_PD
 TIDB_PLAYGROUND_TAG_DOWNSTREAM=$TIDB_PLAYGROUND_TAG_DOWNSTREAM
+TIDB_PLAYGROUND_TAG_OTHER=$TIDB_PLAYGROUND_TAG_OTHER
 KEYSPACE_NAME=$KEYSPACE_NAME
 WORK_DIR=$WORK_DIR
 UPSTREAM_TIUP_PID=$UPSTREAM_TIUP_PID
 CDC_PD_TIUP_PID=$CDC_PD_TIUP_PID
 DOWNSTREAM_TIUP_PID=$DOWNSTREAM_TIUP_PID
+OTHER_TIUP_PID=$OTHER_TIUP_PID
 EOF
 	echo "Variables dumped to $WORK_DIR/next_gen.env"
 }
@@ -273,6 +275,15 @@ s3-bucket = "cse"
 s3-region = "local"
 EOF
 nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "127.0.0.1:$PD_PORT" &
+
+# Start other TiDB
+nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_OTHER" \
+	--pd.host "$DOWN_PD_HOST" \
+	--kv.host "$DOWN_TIKV_HOST" \
+	--db.host "$DOWN_TIDB_HOST" --db.port "$UP_TIDB_OTHER_PORT" &
+OTHER_TIUP_PID=$!
+echo "other tiup pid: $OTHER_TIUP_PID"
+check_port_available "$UP_TIDB_OTHER_PORT" "Wait for other tidb cluster to be available"
 
 # Start a downstream TiDB
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_DOWNSTREAM" \
