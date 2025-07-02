@@ -132,6 +132,7 @@ tar -C bin/ -xvf bin/tikv-$ver-darwin-$arch.tar.gz
 
 wget -O bin/cdc-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/cdc-$ver-darwin-$arch.tar.gz
 tar -C bin/ -xvf bin/cdc-$ver-darwin-$arch.tar.gz
+cp bin/cdc bin/cdc.test
 
 wget -O bin/pd-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/pd-$ver-darwin-$arch.tar.gz
 tar -C bin/ -xvf bin/pd-$ver-darwin-$arch.tar.gz
