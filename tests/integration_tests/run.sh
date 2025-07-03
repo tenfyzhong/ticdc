@@ -8,6 +8,7 @@ set -eu
 
 OUT_DIR=/tmp/tidb_cdc_test
 export CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+export TEST_ROOT=$(realpath "$CUR/../../")
 export PATH=$PATH:$CUR/_utils:$CUR/../bin:$CUR/../../bin:$CUR/../../scripts/bin
 export TICDC_NEWARCH=true
 

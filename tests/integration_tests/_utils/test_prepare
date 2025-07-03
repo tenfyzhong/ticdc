@@ -66,11 +66,11 @@ export MINIO_MC_ALIAS=${MINIO_MC_ALIAS:-localminio}
 export MINIO_API_PORT=${MINIO_API_PORT:-9000}
 export MINIO_CONSOLE_PORT=${MINIO_CONSOLE_PORT:-9001}
 
-export DB_BINPATH=${DB_BINPATH:-./bin/tidb-server}
-export KV_BINPATH=${KV_BINPATH:-./bin/tikv-server}
-export PD_BINPATH=${PD_BINPATH:-./bin/pd-server}
-export CSE_CTL_BINPATH=${CSE_CTL_BINPATH:-./bin/cse-ctl}
-export TIKV_WORKER_BINPATH=${TIKV_WORKER_BINPATH:-./bin/tikv-worker}
+export DB_BINPATH=${DB_BINPATH:-$TEST_ROOT/bin/tidb-server}
+export KV_BINPATH=${KV_BINPATH:-$TEST_ROOT/bin/tikv-server}
+export PD_BINPATH=${PD_BINPATH:-$TEST_ROOT/bin/pd-server}
+export CSE_CTL_BINPATH=${CSE_CTL_BINPATH:-$TEST_ROOT/bin/cse-ctl}
+export TIKV_WORKER_BINPATH=${TIKV_WORKER_BINPATH:-$TEST_ROOT/bin/tikv-worker}
 
 export TIDB_VERSION=${TIDB_VERSION:-v7.5.6}
 export TIDB_PLAYGROUND_TAG=${TIDB_PLAYGROUND_TAG:-serverless-cdc}
