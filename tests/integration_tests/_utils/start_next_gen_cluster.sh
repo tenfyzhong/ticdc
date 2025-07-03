@@ -72,6 +72,7 @@ UPSTREAM_TIUP_PID=$UPSTREAM_TIUP_PID
 CDC_PD_TIUP_PID=$CDC_PD_TIUP_PID
 DOWNSTREAM_TIUP_PID=$DOWNSTREAM_TIUP_PID
 OTHER_TIUP_PID=$OTHER_TIUP_PID
+TIKV_WORKER_PID=$TIKV_WORKER_PID
 EOF
 	echo "Variables dumped to $WORK_DIR/next_gen.env"
 }
@@ -270,6 +271,7 @@ s3-bucket = "cse"
 s3-region = "local"
 EOF
 nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" &
+TIKV_WORKER_PID=$!
 
 # Start other TiDB
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_OTHER" \
