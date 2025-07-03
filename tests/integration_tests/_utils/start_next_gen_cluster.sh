@@ -2,6 +2,7 @@
 # dependencies: docker, mc(minio client)
 # You should compile pd-cse, tidb-cse, replication-worker first
 
+set -x
 source "$CUR/../_utils/test_prepare"
 
 check_bin() {
@@ -52,7 +53,7 @@ PD_BINPATH=$PD_BINPATH
 CSE_CTL_BINPATH=$CSE_CTL_BINPATH
 TIKV_WORKER_BINPATH=$TIKV_WORKER_BINPATH
 UPSTREAM_PORT_OFFSET=$UPSTREAM_PORT_OFFSET
-PD_PORT=$PD_PORT
+NEXT_GEN_GLOBAL_PD_PORT=$NEXT_GEN_GLOBAL_PD_PORT
 CDC_PD_PORT=$CDC_PD_PORT
 MINIO_CONTAINER_NAME=$MINIO_CONTAINER_NAME
 MINIO_ROOT_USER=$MINIO_ROOT_USER
@@ -76,9 +77,10 @@ EOF
 }
 
 check_port_available() {
-	local port=$1
-	local prompt=$2
-	while ! nc -z 127.0.0.1 "$port"; do
+	local host=${1:-127.0.0.1}
+	local port=$2
+	local prompt=$3
+	while ! nc -z "$host" "$port"; do
 		echo "$prompt"
 		sleep 1
 	done
@@ -136,9 +138,6 @@ if [ -z "$WORK_DIR" ]; then
 	exit 1
 fi
 
-PD_PORT=$((2379 + UPSTREAM_PORT_OFFSET))
-TIDB_PORT=$((4000 + UPSTREAM_PORT_OFFSET))
-
 check_bin "$DB_BINPATH" || exit 1
 check_bin "$KV_BINPATH" || exit 1
 check_bin "$PD_BINPATH" || exit 1
@@ -168,7 +167,7 @@ else
 	docker start "$MINIO_CONTAINER_NAME" || true
 fi
 
-check_port_available "$MINIO_API_PORT" "Wait for minio to be available"
+check_port_available "" "$MINIO_API_PORT" "Wait for minio to be available"
 # sleep 1 second while minio becomes available
 sleep 1
 
@@ -211,14 +210,13 @@ EOF
 
 echo "Start upstream cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG" \
-	--db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" \
-	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" \
-	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" \
-	--port-offset "$UPSTREAM_PORT_OFFSET" \
+	--db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" --db.host "$UP_TIDB_HOST" --db.port "$UP_TIDB_PORT" \
+	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" --kv.host "$UP_TIKV_HOST_1" --kv.port "$UP_TIKV_PORT_1" \
+	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" --pd.host "$UP_PD_HOST_1" --pd.port "$NEXT_GEN_GLOBAL_PD_PORT" \
 	--tiflash 0 &
 UPSTREAM_TIUP_PID=$!
 echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
-check_port_available "$TIDB_PORT" "Wait for upstream TiDB to be available"
+check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for upstream TiDB to be available"
 
 echo "run backup"
 cat >"$WORK_DIR/tikv_worker.toml" <<EOF
@@ -226,7 +224,7 @@ data-dir = "$WORK_DIR/tiup-cluster/playground-serverless/br"
 addr = "127.0.0.1:5998"
 
 [pd]
-endpoints = ["127.0.0.1:$PD_PORT"]
+endpoints = ["$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT"]
 
 [security]
 
@@ -238,12 +236,11 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-"$CSE_CTL_BINPATH" backup --pd "127.0.0.1:$PD_PORT" --config "$WORK_DIR/tikv_worker.toml" --lightweight --interval 0
+"$CSE_CTL_BINPATH" backup --pd "$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" --config "$WORK_DIR/tikv_worker.toml" --lightweight --interval 0
 
-set -x
 echo "Start CDC PD cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_CDC_PD" \
-	--pd.port "$CDC_PD_PORT" \
+	--pd.port "$UP_PD_PORT_1" \
 	--pd 1 \
 	--kv 0 \
 	--db 0 \
@@ -251,8 +248,7 @@ nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_CDC_PD" \
 CDC_PD_TIUP_PID=$!
 echo "cdc pd tiup pid: $CDC_PD_TIUP_PID"
 sleep 10
-check_port_available "$CDC_PD_PORT" "Wait for CDC PD to be available"
-set +x
+check_port_available "$UP_PD_HOST_1" "$UP_PD_PORT_1" "Wait for CDC PD to be available"
 
 echo "deploy replication-worker"
 cat >"$WORK_DIR/replication_config.toml" <<EOF
@@ -274,16 +270,17 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "127.0.0.1:$PD_PORT" &
+nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" &
 
 # Start other TiDB
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_OTHER" \
-	--pd.host "$DOWN_PD_HOST" \
-	--kv.host "$DOWN_TIKV_HOST" \
-	--db.host "$DOWN_TIDB_HOST" --db.port "$UP_TIDB_OTHER_PORT" &
+	--pd.host "$UP_PD_HOST_1" \
+	--kv.host "$UP_TIKV_HOST_1" \
+	--db.host "$UP_TIDB_HOST" --db.port "$UP_TIDB_OTHER_PORT" \
+	--tiflash 0 &
 OTHER_TIUP_PID=$!
 echo "other tiup pid: $OTHER_TIUP_PID"
-check_port_available "$UP_TIDB_OTHER_PORT" "Wait for other tidb cluster to be available"
+check_port_available "$UP_TIDB_HOST" "$UP_TIDB_OTHER_PORT" "Wait for other tidb cluster to be available"
 
 # Start a downstream TiDB
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_DOWNSTREAM" \
@@ -292,7 +289,7 @@ nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_DOWNSTREAM" \
 	--db.host "$DOWN_TIDB_HOST" --db.port "$DOWN_TIDB_PORT" &
 DOWNSTREAM_TIUP_PID=$!
 echo "downstream tiup pid: $CDC_PD_TIUP_PID"
-check_port_available "$DOWN_TIDB_PORT" "Wait for downstream to be available"
+check_port_available "$DOWN_TIDB_HOST" "$DOWN_TIDB_PORT" "Wait for downstream to be available"
 
 run_sql "update mysql.tidb set variable_value='60m' where variable_name='tikv_gc_life_time';" ${UP_TIDB_HOST} ${UP_TIDB_PORT}
 run_sql "update mysql.tidb set variable_value='60m' where variable_name='tikv_gc_life_time';" ${DOWN_TIDB_HOST} ${DOWN_TIDB_PORT}
