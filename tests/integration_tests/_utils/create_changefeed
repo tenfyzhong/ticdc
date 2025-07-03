@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 sink_uri=""
-changefeed="changefeed-id"
+changefeed=""
 server="http://$CDC_DEFAULT_HOST:$CDC_DEFAULT_PORT"
 config=""
 start_ts=0
@@ -22,7 +22,7 @@ while [ $# -ne 0 ]; do
 		shift
 		changefeed="$1"
 		;;
-	--changefeed-id=*)
+	-c=* | --changefeed-id=*)
 		changefeed="${1#*=}"
 		;;
 	--server)
@@ -46,6 +46,10 @@ while [ $# -ne 0 ]; do
 	esac
 	shift
 done
+
+if [ -z "$changefeed" ]; then
+	changefeed=$(uuidgen)
+fi
 
 replica_config="{}"
 if [ -n "$config" ]; then
