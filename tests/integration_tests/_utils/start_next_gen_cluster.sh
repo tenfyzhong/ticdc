@@ -240,8 +240,7 @@ EOF
 
 echo "Start CDC PD cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_CDC_PD" \
-	--pd.port "$UP_PD_PORT_1" \
-	--pd 1 \
+	--pd.host "$UP_PD_HOST_1" --pd.port "$UP_PD_PORT_1" --pd 1 \
 	--kv 0 \
 	--db 0 \
 	--tiflash 0 &
