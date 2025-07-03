@@ -18,9 +18,12 @@ while [ $# -ne 0 ]; do
 	--target-ts=*)
 		target_ts="${1#*=}"
 		;;
-	-c)
+	-c | changefeed-id)
 		shift
 		changefeed="$1"
+		;;
+	--changefeed-id=*)
+		changefeed="${1#*=}"
 		;;
 	--server)
 		shift
@@ -29,6 +32,9 @@ while [ $# -ne 0 ]; do
 	--config)
 		shift
 		config="$1"
+		;;
+	--config=*)
+		config="${1#*=}"
 		;;
 	--pd=*)
 		# We don't use pd when using TiCDC api
