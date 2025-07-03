@@ -214,7 +214,7 @@ nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG" \
 	--db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" --db.host "$UP_TIDB_HOST" --db.port "$UP_TIDB_PORT" \
 	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" --kv.host "$UP_TIKV_HOST_1" --kv.port "$UP_TIKV_PORT_1" \
 	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" --pd.host "$UP_PD_HOST_1" --pd.port "$NEXT_GEN_GLOBAL_PD_PORT" \
-	--tiflash 0 &
+	--tiflash 1 &
 UPSTREAM_TIUP_PID=$!
 echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
 check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for upstream TiDB to be available"
