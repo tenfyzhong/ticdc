@@ -29,6 +29,9 @@ while [ $# -ne 0 ]; do
 		shift
 		server="$1"
 		;;
+	--server=*)
+		server="${1#*=}"
+		;;
 	--config)
 		shift
 		config="$1"
