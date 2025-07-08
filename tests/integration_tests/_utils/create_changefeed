@@ -74,7 +74,7 @@ else
 		exit 1
 	fi
 fi
-id=$(echo $data | jq '.id' | tr -d '"')
+id=$(echo $data | jq -r '.id')
 # compatibility with the output of `cdc cli changefeed create`
 echo "Create changefeed successfully!"
 echo "ID: $id"
