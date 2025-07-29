@@ -39,7 +39,7 @@ Environment Variables:
   MINIO_MC_ALIAS                MinIO mc alias (default: localminio)
   MINIO_API_PORT                MinIO API port (default: 9000)
   MINIO_CONSOLE_PORT            MinIO console port (default: 9001)
-  TIDB_VERSION                  TiDB version (default: v7.5.6)
+  TIDB_VERSION                  TiDB version (default: v8.5.1)
   TIDB_PLAYGROUND_TAG           TiDB playground tag (default: serverless-cdc)
   TIDB_PLAYGROUND_TAG_CDC_PD    TiDB playground CDC PD tag (default: serverless-cdc-pd)
 EOF
@@ -66,6 +66,7 @@ TIDB_PLAYGROUND_TAG=$TIDB_PLAYGROUND_TAG
 TIDB_PLAYGROUND_TAG_CDC_PD=$TIDB_PLAYGROUND_TAG_CDC_PD
 TIDB_PLAYGROUND_TAG_DOWNSTREAM=$TIDB_PLAYGROUND_TAG_DOWNSTREAM
 TIDB_PLAYGROUND_TAG_OTHER=$TIDB_PLAYGROUND_TAG_OTHER
+TIDB_KEYSPACE_1_PID=$TIDB_KEYSPACE_1_PID
 KEYSPACE_NAME=$KEYSPACE_NAME
 WORK_DIR=$WORK_DIR
 UPSTREAM_TIUP_PID=$UPSTREAM_TIUP_PID
@@ -205,19 +206,29 @@ target-file-size = "512MB"
 wal-chunk-target-file-size = "128MB"
 EOF
 
+cat >"$WORK_DIR/tidb-system.toml" <<EOF
+keyspace-name = "SYSTEM"
+EOF
+
 cat >"$WORK_DIR/tidb.toml" <<EOF
 keyspace-name = "$KEYSPACE_NAME"
 EOF
 
+# We should start a SYSTEM tidb first on next gen
 echo "Start upstream cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG" \
-	--db.config "$WORK_DIR/tidb.toml" --db.binpath "$DB_BINPATH" --db.host "$UP_TIDB_HOST" --db.port "$UP_TIDB_PORT" \
+	--db.config "$WORK_DIR/tidb-system.toml" --db.binpath "$DB_BINPATH" --db.host "$UP_TIDB_HOST" --db.port "$UP_SYSTEM_TIDB_PORT" \
 	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" --kv.host "$UP_TIKV_HOST_1" --kv.port "$UP_TIKV_PORT_1" \
 	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" --pd.host "$UP_PD_HOST_1" --pd.port "$NEXT_GEN_GLOBAL_PD_PORT" \
 	--tiflash 1 &
 UPSTREAM_TIUP_PID=$!
 echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
-check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for upstream TiDB to be available"
+check_port_available "$UP_TIDB_HOST" "$UP_SYSTEM_TIDB_PORT" "Wait for system TiDB to be available"
+
+echo "Start the $KEYSPACE_NAME tidb"
+nohup "$DB_BINPATH" --config "$WORK_DIR/tidb.toml" -P "$UP_TIDB_PORT" --store=tikv --path="$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" -status 15000 &
+TIDB_KEYSPACE_1_PID=$!
+check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for $KEYSPACE_NAME TiDB to be available"
 
 echo "run backup"
 cat >"$WORK_DIR/tikv_worker.toml" <<EOF
