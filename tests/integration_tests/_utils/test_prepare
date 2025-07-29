@@ -17,7 +17,7 @@ export CDC_PD_PORT=${CDC_PD_PORT:-22379}
 export CDC_DEFAULT_HOST=${CDC_DEFAULT_HOST:-127.0.0.1}
 export CDC_DEFAULT_PORT=${CDC_DEFAULT_PORT:-8300}
 
-if [ -n "$IS_NEXT_GEN" ]; then
+if [ -n "$NEXT_GEN" ]; then
     export UP_PD_PORT_1=${UP_PD_PORT_1:-$CDC_PD_PORT}
 else
     export UP_PD_PORT_1=${UP_PD_PORT_1:-2379}
