@@ -226,7 +226,7 @@ echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
 check_port_available "$UP_TIDB_HOST" "$UP_SYSTEM_TIDB_PORT" "Wait for system TiDB to be available"
 
 echo "Start the $KEYSPACE_NAME tidb"
-nohup "$DB_BINPATH" --config "$WORK_DIR/tidb.toml" -P "$UP_TIDB_PORT" --store=tikv --path="$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" -status 15000 &
+nohup "$DB_BINPATH" --config "$WORK_DIR/tidb.toml" -P "$UP_TIDB_PORT" --store=tikv --path="$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" -status 15000 -log-file "$WORK_DIR/tidb-$KEYSPACE_NAME.log" -log-slow-query "$WORK_DIR/tidb-slow.log" &
 TIDB_KEYSPACE_1_PID=$!
 check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for $KEYSPACE_NAME TiDB to be available"
 
