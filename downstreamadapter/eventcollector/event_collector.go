@@ -275,7 +275,9 @@ func (c *EventCollector) groupHeartbeat(heartbeat *event.DispatcherHeartbeat) ma
 		if !ok {
 			continue
 		}
-		group(stat.(*dispatcherStat).connState.getEventServiceID(), dp)
+		if stat.(*dispatcherStat).connState.isReceivingDataEvent() {
+			group(stat.(*dispatcherStat).connState.getEventServiceID(), dp)
+		}
 	}
 
 	return groupedHeartbeats
@@ -401,7 +403,6 @@ func (c *EventCollector) runDispatchMessage(ctx context.Context, inCh <-chan *me
 						}
 						c.metricDispatcherReceivedResolvedTsEventCount.Add(float64(resolvedTsCount))
 					default:
-						// log.Info("fizz forward event to dynamic stream", zap.Any("event", e))
 						c.metricDispatcherReceivedKVEventCount.Add(float64(e.Len()))
 						dispatcherEvent := dispatcher.NewDispatcherEvent(&targetMessage.From, e)
 						c.ds.Push(e.GetDispatcherID(), dispatcherEvent)

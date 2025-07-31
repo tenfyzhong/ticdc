@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/downstreamadapter/sink/helper"
 	"github.com/pingcap/ticdc/pkg/common"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
@@ -44,8 +45,8 @@ func TestDeframenter(t *testing.T) {
 	eg, egCtx := errgroup.WithContext(ctx)
 
 	inputCh := make(chan eventFragment)
-	outputCh := chann.NewAutoDrainChann[eventFragment]()
-	defrag := newDefragmenter(inputCh, []*chann.DrainableChann[eventFragment]{outputCh})
+	outputCh := chann.NewUnlimitedChannel[eventFragment, any](nil, nil)
+	defrag := newDefragmenter(inputCh, []*chann.UnlimitedChannel[eventFragment, any]{outputCh})
 	eg.Go(func() error {
 		return defrag.Run(egCtx)
 	})
@@ -98,9 +99,10 @@ func TestDeframenter(t *testing.T) {
 				vals = append(vals, j+1, "hello world")
 			}
 			frag.event = &commonEvent.DMLEvent{
-				PhysicalTableID: 100,
-				TableInfo:       tableInfo,
-				Rows:            chunk.MutRowFromValues(vals...).ToRow().Chunk(),
+				PhysicalTableID:  100,
+				TableInfo:        tableInfo,
+				TableInfoVersion: 1,
+				Rows:             chunk.MutRowFromValues(vals...).ToRow().Chunk(),
 			}
 			encoder, err := codec.NewTxnEventEncoder(encoderConfig)
 			require.Nil(t, err)
@@ -116,20 +118,21 @@ func TestDeframenter(t *testing.T) {
 	}
 
 	prevSeq := 0
-LOOP:
-	for {
-		select {
-		case frag := <-outputCh.Out():
-			for _, msg := range frag.encodedMsgs {
-				curSeq, err := strconv.Atoi(string(msg.Key))
-				require.Nil(t, err)
-				require.GreaterOrEqual(t, curSeq, prevSeq)
-				prevSeq = curSeq
-			}
-		case <-time.After(5 * time.Second):
-			break LOOP
+	buffer := make([]eventFragment, 0, 1024)
+
+	frags, ok := outputCh.GetMultipleNoGroup(buffer)
+	if !ok {
+		log.Panic("unexpected error")
+	}
+	for _, frag := range frags {
+		for _, msg := range frag.encodedMsgs {
+			curSeq, err := strconv.Atoi(string(msg.Key))
+			require.Nil(t, err)
+			require.GreaterOrEqual(t, curSeq, prevSeq)
+			prevSeq = curSeq
 		}
 	}
+
 	cancel()
 	require.ErrorIs(t, eg.Wait(), context.Canceled)
 }

@@ -326,7 +326,7 @@ func (pi *pathInfo[A, P, T, D, H]) appendEvent(event eventWrap[A, P, T, D, H], h
 		// If the last event is a periodic signal, we only need to keep the latest one.
 		// And we don't need to add a new signal.
 		*back = event
-		return false
+		return true
 	} else {
 		pi.pendingQueue.PushBack(event)
 		pi.updatePendingSize(int64(event.eventSize))
@@ -350,7 +350,7 @@ func (pi *pathInfo[A, P, T, D, H]) popEvent() (eventWrap[A, P, T, D, H], bool) {
 func (pi *pathInfo[A, P, T, D, H]) updatePendingSize(delta int64) {
 	pi.pendingSize.Add(delta)
 	if pi.pendingSize.Load() < 0 {
-		log.Warn("pendingSize is negative", zap.Int64("pendingSize", pi.pendingSize.Load()))
+		log.Debug("pendingSize is negative", zap.Int64("pendingSize", pi.pendingSize.Load()))
 		pi.pendingSize.Store(0)
 	}
 }

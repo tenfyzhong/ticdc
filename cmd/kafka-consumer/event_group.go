@@ -14,6 +14,7 @@
 package main
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/pingcap/log"
@@ -40,7 +41,7 @@ func NewEventsGroup(partition int32, tableID int64) *eventsGroup {
 }
 
 // Append will append an event to event groups.
-func (g *eventsGroup) Append(row *commonEvent.DMLEvent) {
+func (g *eventsGroup) Append(row *commonEvent.DMLEvent, force bool) {
 	if row.CommitTs > g.highWatermark {
 		g.highWatermark = row.CommitTs
 	}
@@ -60,10 +61,16 @@ func (g *eventsGroup) Append(row *commonEvent.DMLEvent) {
 		lastDMLEvent.RowTypes = append(lastDMLEvent.RowTypes, row.RowTypes...)
 		lastDMLEvent.Length += row.Length
 		lastDMLEvent.PostTxnFlushed = append(lastDMLEvent.PostTxnFlushed, row.PostTxnFlushed...)
-		lastDMLEvent.ApproximateSize += row.ApproximateSize
 		return
 	}
 
+	if force {
+		i := sort.Search(len(g.events), func(i int) bool {
+			return g.events[i].CommitTs > row.CommitTs
+		})
+		g.events = slices.Insert(g.events, i, row)
+		return
+	}
 	log.Panic("append event with smaller commit ts",
 		zap.Int32("partition", g.partition), zap.Int64("tableID", g.tableID),
 		zap.Uint64("lastCommitTs", lastDMLEvent.GetCommitTs()), zap.Uint64("commitTs", row.GetCommitTs()))
