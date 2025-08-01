@@ -208,6 +208,10 @@ EOF
 
 cat >"$WORK_DIR/tidb-system.toml" <<EOF
 keyspace-name = "SYSTEM"
+tikv-worker-url = "http://127.0.0.1:19000"
+
+[instance]
+tidb_service_scope = 'dxf_service'
 EOF
 
 cat >"$WORK_DIR/tidb.toml" <<EOF
