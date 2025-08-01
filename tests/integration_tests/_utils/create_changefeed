@@ -6,6 +6,7 @@ server="http://$CDC_DEFAULT_HOST:$CDC_DEFAULT_PORT"
 config=""
 start_ts=0
 target_ts=0
+is_next_gen=${NEXT_GEN:-0}
 
 while [ $# -ne 0 ]; do
 	case "$1" in
@@ -39,6 +40,10 @@ while [ $# -ne 0 ]; do
 	--config=*)
 		config="${1#*=}"
 		;;
+	--next-gen)
+		shift
+		is_next_gen=$1
+		;;
 	--pd=*)
 		# We don't use pd when using TiCDC api
 		;;
@@ -61,7 +66,7 @@ fi
 
 SINK_PARA="{\"changefeed_id\":\"$changefeed\", \"start_ts\": $start_ts, \"target_ts\": $target_ts, \"sink_uri\":\"$sink_uri\", \"replica_config\":$replica_config}"
 echo "SINK_PARA:$SINK_PARA"
-if [ "$NEXT_GEN" = 1 ]; then
+if [ "$is_next_gen" = 1 ]; then
 	data=$(curl -X POST -H "Content-type: appliction/json" "http://$TIKV_WORKER_HOST:$TIKV_WORKER_PORT/cdc/api/v2/changefeeds?keyspace_id=1" -d "$SINK_PARA")
 	if [ "$?" -ne 0 ]; then
 		echo "create changefeed failed" >&2
