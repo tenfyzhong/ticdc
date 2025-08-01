@@ -53,7 +53,7 @@ PD_BINPATH=$PD_BINPATH
 CSE_CTL_BINPATH=$CSE_CTL_BINPATH
 TIKV_WORKER_BINPATH=$TIKV_WORKER_BINPATH
 UPSTREAM_PORT_OFFSET=$UPSTREAM_PORT_OFFSET
-NEXT_GEN_GLOBAL_PD_PORT=$NEXT_GEN_GLOBAL_PD_PORT
+GLOBAL_PD_PORT=$GLOBAL_PD_PORT
 CDC_PD_PORT=$CDC_PD_PORT
 MINIO_CONTAINER_NAME=$MINIO_CONTAINER_NAME
 MINIO_ROOT_USER=$MINIO_ROOT_USER
@@ -223,14 +223,14 @@ echo "Start upstream cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG" \
 	--db.config "$WORK_DIR/tidb-system.toml" --db.binpath "$DB_BINPATH" --db.host "$UP_TIDB_HOST" --db.port "$UP_SYSTEM_TIDB_PORT" \
 	--kv.config "$WORK_DIR/tikv.toml" --kv.binpath "$KV_BINPATH" --kv.host "$UP_TIKV_HOST_1" --kv.port "$UP_TIKV_PORT_1" \
-	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" --pd.host "$UP_PD_HOST_1" --pd.port "$NEXT_GEN_GLOBAL_PD_PORT" \
+	--pd.config "$WORK_DIR/pd.toml" --pd.binpath "$PD_BINPATH" --pd.host "$UP_PD_HOST_1" --pd.port "$GLOBAL_PD_PORT" \
 	--tiflash 1 &
 UPSTREAM_TIUP_PID=$!
 echo "upstream tiup pid: $UPSTREAM_TIUP_PID"
 check_port_available "$UP_TIDB_HOST" "$UP_SYSTEM_TIDB_PORT" "Wait for system TiDB to be available"
 
 echo "Start the $KEYSPACE_NAME tidb"
-nohup "$DB_BINPATH" --config "$WORK_DIR/tidb.toml" -P "$UP_TIDB_PORT" --store=tikv --path="$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" -status 15000 -log-file "$WORK_DIR/tidb-$KEYSPACE_NAME.log" -log-slow-query "$WORK_DIR/tidb-slow.log" &
+nohup "$DB_BINPATH" --config "$WORK_DIR/tidb.toml" -P "$UP_TIDB_PORT" --store=tikv --path="$UP_PD_HOST_1:$GLOBAL_PD_PORT" -status 15000 -log-file "$WORK_DIR/tidb-$KEYSPACE_NAME.log" -log-slow-query "$WORK_DIR/tidb-slow.log" &
 TIDB_KEYSPACE_1_PID=$!
 check_port_available "$UP_TIDB_HOST" "$UP_TIDB_PORT" "Wait for $KEYSPACE_NAME TiDB to be available"
 
@@ -240,7 +240,7 @@ data-dir = "$WORK_DIR/tiup-cluster/playground-serverless/br"
 addr = "127.0.0.1:5998"
 
 [pd]
-endpoints = ["$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT"]
+endpoints = ["$UP_PD_HOST_1:$GLOBAL_PD_PORT"]
 
 [security]
 
@@ -252,7 +252,7 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-"$CSE_CTL_BINPATH" backup --pd "$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" --config "$WORK_DIR/tikv_worker.toml" --lightweight --interval 0
+"$CSE_CTL_BINPATH" backup --pd "$UP_PD_HOST_1:$GLOBAL_PD_PORT" --config "$WORK_DIR/tikv_worker.toml" --lightweight --interval 0
 
 echo "Start CDC PD cluster and wait for it to be ready"
 nohup tiup playground "$TIDB_VERSION" --tag "$TIDB_PLAYGROUND_TAG_CDC_PD" \
@@ -285,7 +285,7 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$NEXT_GEN_GLOBAL_PD_PORT" &
+nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$GLOBAL_PD_PORT" &
 TIKV_WORKER_PID=$!
 
 # Start other TiDB
