@@ -285,7 +285,7 @@ s3-secret-key = "$MINIO_ROOT_PASSWORD"
 s3-bucket = "cse"
 s3-region = "local"
 EOF
-nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$GLOBAL_PD_PORT" &
+nohup "$TIKV_WORKER_BINPATH" --config "$WORK_DIR/replication_config.toml" --pd-endpoints "$UP_PD_HOST_1:$GLOBAL_PD_PORT" --log-file "$WORK_DIR/tikv_worker.log" &
 TIKV_WORKER_PID=$!
 
 # Start other TiDB
