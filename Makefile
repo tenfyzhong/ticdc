@@ -265,10 +265,11 @@ check: check-copyright fmt tidy check-diff-line-width check-ticdc-dashboard chec
 	@git --no-pager diff --exit-code || (echo "Please add changed files!" && false)
 
 clean:
-	go clean -i ./...
-	rm -rf *.out
-	rm -rf bin
-	rm -rf tools/bin
-	rm -rf tools/include
+	# FORBIDDEN-COMMITTING tenfyzhong 2025-07-31 10:02:46
+	# go clean -i ./...
+	# rm -rf *.out
+	# rm -rf bin
+	# rm -rf tools/bin
+	# rm -rf tools/include
 
 workload: tools/bin/workload

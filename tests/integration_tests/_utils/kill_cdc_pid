@@ -8,7 +8,7 @@ kill $pid || true
 
 counter=0
 while [ $counter -lt $retry_count ]; do
-	ps $pid >/dev/null 2>&1
+	kill -0 $pid >/dev/null 2>&1
 	ret=$?
 	if [ "$ret" != "0" ]; then
 		echo "process $pid already exit"

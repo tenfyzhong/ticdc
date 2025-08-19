@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu
+set -x
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -16,7 +17,7 @@ function run() {
 	cd $WORK_DIR
 
 	# record tso before we create tables to skip the system table DDLs
-	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
+	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${GLOBAL_PD_PORT})
 
 	run_sql_file $CUR/data/prepare.sql ${UP_TIDB_HOST} ${UP_TIDB_PORT}
 
@@ -44,7 +45,7 @@ EOF
 	else
 		echo "" >$WORK_DIR/pulsar_test.toml
 	fi
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI" --config $WORK_DIR/pulsar_test.toml
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI" --config $WORK_DIR/pulsar_test.toml
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR "kafka://127.0.0.1:9092/$TOPIC_NAME?protocol=open-protocol&partition-num=4&version=${KAFKA_VERSION}&max-message-bytes=10485760" ;;
 	storage) run_storage_consumer $WORK_DIR $SINK_URI "" "" ;;

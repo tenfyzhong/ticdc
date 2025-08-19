@@ -111,7 +111,7 @@ function run() {
 	cd $WORK_DIR
 
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
-	changefeedid=$(cdc cli changefeed create --sink-uri="$SINK_URI" 2>&1 | tail -n2 | head -n1 | awk '{print $2}')
+	changefeedid=$(create_changefeed --sink-uri="$SINK_URI" 2>&1 | tail -n2 | head -n1 | awk '{print $2}')
 
 	OLDIFS=$IFS
 	IFS=""

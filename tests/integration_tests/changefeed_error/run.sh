@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu
+set -x
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -35,12 +36,17 @@ function run() {
 
 	cd $WORK_DIR
 
-	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
+	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${GLOBAL_PD_PORT})
 	run_sql "CREATE DATABASE changefeed_error;" ${UP_TIDB_HOST} ${UP_TIDB_PORT}
 	go-ycsb load mysql -P $CUR/conf/workload -p mysql.host=${UP_TIDB_HOST} -p mysql.port=${UP_TIDB_PORT} -p mysql.user=root -p mysql.db=changefeed_error
 	export GO_FAILPOINTS='github.com/pingcap/ticdc/logservice/schemastore/getAllPhysicalTablesGCFastFail=1*return(true)'
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
-	capture_pid=$(ps -C $CDC_BINARY -o pid= | awk '{print $1}')
+	if [[ "$(uname)" == "Darwin" ]]; then
+		# ps -C is not compatible with macOS, use `ps aux | grep` instead.
+		capture_pid=$(ps aux | grep -F "$CDC_BINARY" | grep -v "grep" | head -n1 | awk '{print $2}')
+	else
+		capture_pid=$(ps -C $CDC_BINARY -o pid= | awk '{print $1}')
+	fi
 
 	TOPIC_NAME="ticdc-sink-retry-test-$RANDOM"
 	case $SINK_TYPE in
@@ -53,7 +59,7 @@ function run() {
 	*) SINK_URI="mysql://normal:123456@127.0.0.1:3306/?max-txn-row=1" ;;
 	esac
 	changefeedid="changefeed-error"
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR "kafka://127.0.0.1:9092/$TOPIC_NAME?protocol=open-protocol&partition-num=4&version=${KAFKA_VERSION}&max-message-bytes=10485760" ;;
 	storage) run_storage_consumer $WORK_DIR $SINK_URI "" "" ;;
@@ -87,7 +93,7 @@ function run() {
 
 	# try to create another changefeed to make sure the coordinator is not stuck
 	changefeedid_2="changefeed-error-2"
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid_2
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid_2
 	ensure $MAX_RETRIES check_changefeed_state http://${UP_PD_HOST_1}:${UP_PD_PORT_1} ${changefeedid_2} "warning" "failpoint injected retriable error" ""
 
 	run_cdc_cli changefeed remove -c $changefeedid
@@ -115,7 +121,7 @@ function run() {
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 
 	changefeedid_3="changefeed-error-3"
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid_3
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI" -c $changefeedid_3
 	ensure $MAX_RETRIES check_changefeed_state http://${UP_PD_HOST_1}:${UP_PD_PORT_1} ${changefeedid_3} "failed" "[CDC:ErrSnapshotLostByGC]" ""
 
 	run_cdc_cli changefeed remove -c $changefeedid_3

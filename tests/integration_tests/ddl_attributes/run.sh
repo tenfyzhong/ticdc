@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu
+set -x
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -15,10 +16,11 @@ function run() {
 
 	cd $WORK_DIR
 
-	# record tso before we create tables to skip the system table DDLs
-	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
-
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
+
+	# record tso before we create tables to skip the system table DDLs
+	# start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${GLOBAL_PD_PORT})
+	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
 
 	TOPIC_NAME="ticdc-ddl-attributes-test-$RANDOM"
 	case $SINK_TYPE in
@@ -31,7 +33,7 @@ function run() {
 	*) SINK_URI="mysql://root@127.0.0.1:3306/" ;;
 	esac
 
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI"
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI"
 
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR $SINK_URI ;;
@@ -41,6 +43,7 @@ function run() {
 	run_sql_file $CUR/data/prepare.sql ${UP_TIDB_HOST} ${UP_TIDB_PORT}
 	# sync_diff can't check non-exist table, so we check expected tables are created in downstream first
 	sleep 3
+	read -r
 	check_table_exists ddl_attributes.attributes_t1_new ${DOWN_TIDB_HOST} ${DOWN_TIDB_PORT}
 	check_table_exists ddl_attributes.finish_mark ${DOWN_TIDB_HOST} ${DOWN_TIDB_PORT}
 

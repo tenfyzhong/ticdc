@@ -31,7 +31,12 @@ function run() {
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --logsuffix 1
 	# wait for cdc run
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
-	owner_pid=$(ps -C $CDC_BINARY -o pid= | awk '{print $1}')
+	if [[ "$(uname)" == "Darwin" ]]; then
+		# ps -C is not compatible with macOS, use `ps aux | grep` instead.
+		owner_pid=$(ps aux | grep -F "$CDC_BINARY" | grep -v "grep" | head -n1 | awk '{print $2}')
+	else
+		owner_pid=$(ps -C $CDC_BINARY -o pid= | awk '{print $1}')
+	fi
 	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/id/{print $4}')
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id

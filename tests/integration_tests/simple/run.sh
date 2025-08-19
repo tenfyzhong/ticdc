@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu
+set -x
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -16,7 +17,7 @@ function prepare() {
 	cd $WORK_DIR
 
 	# record tso before we create tables to skip the system table DDLs
-	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
+	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${GLOBAL_PD_PORT})
 
 	run_sql "CREATE table test.simple1(id int primary key, val int);"
 	run_sql "CREATE table test.simple2(id int primary key, val int);"
@@ -33,7 +34,7 @@ function prepare() {
 		;;
 	*) SINK_URI="mysql+ssl://normal:123456@127.0.0.1:3306/" ;;
 	esac
-	run_cdc_cli changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI"
+	create_changefeed --start-ts=$start_ts --sink-uri="$SINK_URI"
 	case $SINK_TYPE in
 	kafka) run_kafka_consumer $WORK_DIR "kafka://127.0.0.1:9092/$TOPIC_NAME?protocol=open-protocol&partition-num=4&version=${KAFKA_VERSION}&max-message-bytes=10485760" ;;
 	storage) run_storage_consumer $WORK_DIR $SINK_URI "" "" ;;
@@ -106,10 +107,11 @@ function sql_test() {
 
 function region_label_test() {
 	i=0
-	while [ -z "$(curl -X GET http://127.0.0.1:2379/pd/api/v1/config/region-label/rules 2>/dev/null | grep 'meta')" ]; do
+	while [ -z "$(curl -X GET http://$UP_PD_HOST_1:$UP_PD_PORT_1/pd/api/v1/config/region-label/rules 2>/dev/null | grep 'meta')" ]; do
 		i=$((i + 1))
 		if [ "$i" -gt 5 ]; then
 			echo 'Failed to verify meta region labels'
+			read -r
 			exit 1
 		fi
 		sleep 1
