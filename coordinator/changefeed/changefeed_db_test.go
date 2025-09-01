@@ -276,7 +276,7 @@ func TestScheduleChangefeed(t *testing.T) {
 
 func TestCalculateGCSafepoint(t *testing.T) {
 	db := NewChangefeedDB(1216)
-	require.True(t, math.MaxUint64 == db.CalculateGCSafepoint())
+	require.True(t, math.MaxUint64 == db.CalculateGlobalGCSafepoint())
 
 	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	cf1 := NewChangefeed(cfID,
@@ -286,7 +286,7 @@ func TestCalculateGCSafepoint(t *testing.T) {
 			State:        config.StateStopped,
 		}, 11, true)
 	db.AddStoppedChangefeed(cf1)
-	require.Equal(t, uint64(11), db.CalculateGCSafepoint())
+	require.Equal(t, uint64(11), db.CalculateGlobalGCSafepoint())
 
 	cf2ID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	cf2 := NewChangefeed(cf2ID,
@@ -296,7 +296,7 @@ func TestCalculateGCSafepoint(t *testing.T) {
 			State:        config.StateFinished,
 		}, 9, true)
 	db.AddStoppedChangefeed(cf2)
-	require.Equal(t, uint64(11), db.CalculateGCSafepoint())
+	require.Equal(t, uint64(11), db.CalculateGlobalGCSafepoint())
 
 	cf3ID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	cf3 := NewChangefeed(cf3ID,
@@ -306,7 +306,7 @@ func TestCalculateGCSafepoint(t *testing.T) {
 			State:        config.StateNormal,
 		}, 10, true)
 	db.AddStoppedChangefeed(cf3)
-	require.Equal(t, uint64(10), db.CalculateGCSafepoint())
+	require.Equal(t, uint64(10), db.CalculateGlobalGCSafepoint())
 
 	cf4ID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	cf4 := NewChangefeed(cf4ID,
@@ -319,7 +319,7 @@ func TestCalculateGCSafepoint(t *testing.T) {
 			},
 		}, 7, true)
 	db.AddStoppedChangefeed(cf4)
-	require.Equal(t, uint64(10), db.CalculateGCSafepoint())
+	require.Equal(t, uint64(10), db.CalculateGlobalGCSafepoint())
 
 	cf5ID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	cf5 := NewChangefeed(cf5ID,
@@ -330,5 +330,5 @@ func TestCalculateGCSafepoint(t *testing.T) {
 			Error:        &config.RunningError{},
 		}, 7, true)
 	db.AddStoppedChangefeed(cf5)
-	require.Equal(t, uint64(7), db.CalculateGCSafepoint())
+	require.Equal(t, uint64(7), db.CalculateGlobalGCSafepoint())
 }

@@ -16,12 +16,14 @@ package gc
 import (
 	"context"
 	"math"
+	"time"
 
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/retry"
 	pd "github.com/tikv/pd/client"
+	"github.com/tikv/pd/client/clients/gc"
 	"go.uber.org/zap"
 )
 
@@ -128,4 +130,19 @@ func RemoveServiceGCSafepoint(ctx context.Context, pdCli pd.Client, serviceID st
 		retry.WithBackoffBaseDelay(gcServiceBackoffDelay), // 1s
 		retry.WithMaxTries(gcServiceMaxRetries),
 		retry.WithIsRetryableErr(errors.IsRetryableError))
+}
+
+func SetGCBarrier(ctx context.Context, gcCli gc.GCStatesClient, serviceID string, ts uint64, ttl time.Duration) (barrierTS uint64, err error) {
+	err = retry.Do(ctx, func() error {
+		barrierInfo, err1 := gcCli.SetGCBarrier(ctx, serviceID, ts, ttl)
+		if err1 != nil {
+			log.Warn("Set GC barrier failed, retry later", zap.Error(err1))
+			return err1
+		}
+		barrierTS = barrierInfo.BarrierTS
+		return nil
+	}, retry.WithBackoffBaseDelay(gcServiceBackoffDelay),
+		retry.WithMaxTries(gcServiceMaxRetries),
+		retry.WithIsRetryableErr(errors.IsRetryableError))
+	return
 }

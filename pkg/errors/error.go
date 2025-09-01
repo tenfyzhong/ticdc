@@ -519,6 +519,14 @@ var (
 		"updating service safepoint failed",
 		errors.RFCCodeText("CDC:ErrUpdateServiceSafepointFailed"),
 	)
+	ErrUpdateGCBarrierFailed = errors.Normalize(
+		"updating gc barrier failed",
+		errors.RFCCodeText("CDC:ErrUpdateGCBarrierFailed"),
+	)
+	ErrLoadKeyspaceFailed = errors.Normalize(
+		"loading keyspace failed",
+		errors.RFCCodeText("CDC:ErrLoadKeyspaceFailed"),
+	)
 	ErrUpstreamMissMatch = errors.Normalize(
 		"upstream missmatch,old: %d, new %d",
 		errors.RFCCodeText("CDC:ErrUpstreamMissMatch"),

@@ -729,8 +729,12 @@ func (c *Controller) moveChangefeedToSchedulingQueue(
 	c.changefeedDB.MoveToSchedulingQueue(id, resetBackoff, overwriteCheckpointTs)
 }
 
-func (c *Controller) calculateGCSafepoint() uint64 {
-	return c.changefeedDB.CalculateGCSafepoint()
+func (c *Controller) calculateGlobalGCSafepoint() uint64 {
+	return c.changefeedDB.CalculateGlobalGCSafepoint()
+}
+
+func (c *Controller) calculateKeyspaceGCBarrier() map[string]uint64 {
+	return c.changefeedDB.CalculateKeyspaceGCBarrier()
 }
 
 func shouldRunChangefeed(state config.FeedState) bool {
