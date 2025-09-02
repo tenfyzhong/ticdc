@@ -219,8 +219,7 @@ func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID u
 	}
 	m.keyspaceGCBarrierInfoMap.Store(keyspaceID, newBarrierInfo)
 
-	// TODO tenfyzhong 2025-09-01 11:03:32
-	// set gauge
+	// TODO tenfyzhong 2025-09-01 11:03:32 set gauge
 
 	return nil
 }
