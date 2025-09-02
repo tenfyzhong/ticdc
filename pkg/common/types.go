@@ -250,6 +250,11 @@ func NewChangefeedIDFromPB(pb *heartbeatpb.ChangefeedID) ChangeFeedID {
 			Keyspace: pb.Keyspace,
 		},
 	}
+	// An empty pb.Keyspace indicates that the heartbeat message is from an older version node during an upgrade;
+	// backward compatibility must be maintained.
+	if d.DisplayName.Keyspace == "" {
+		d.DisplayName.Keyspace = pb.Namespace
+	}
 	return d
 }
 
