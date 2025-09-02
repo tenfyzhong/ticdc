@@ -8,8 +8,8 @@ fi
 os=$(uname -s)
 pid=
 if [[ "$os" == "Darwin" ]]; then
-	pid=$(pgrep -f "run_cdc_server" | head -n 1)
+	pid=$(pgrep -f "$1" | head -n 1)
 else
-	pid=$(ps -C run_cdc_server -o pid= | tr -d '[:space:]')
+	pid=$(ps -C "$1" -o pid= | tr -d '[:space:]')
 fi
 echo $pid
