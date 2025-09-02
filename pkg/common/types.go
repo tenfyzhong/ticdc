@@ -270,8 +270,8 @@ func (c ChangeFeedID) ToPB() *heartbeatpb.ChangefeedID {
 		Low:  c.Id.Low,
 		High: c.Id.High,
 		Name: c.Name(),
-		// We have rename namespace to keyspace
-		// In order to compatible with the old version, we still keep the namespace
+		// The term namespace has been changed to keyspace.
+		// For backward compatibility during the upgrade process, namespace is preserved and now maps to keyspace.
 		Namespace: c.Keyspace(),
 		Keyspace:  c.Keyspace(),
 	}
