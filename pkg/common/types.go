@@ -250,11 +250,6 @@ func NewChangefeedIDFromPB(pb *heartbeatpb.ChangefeedID) ChangeFeedID {
 			Keyspace: pb.Keyspace,
 		},
 	}
-	// An empty pb.Keyspace indicates that the heartbeat message is from an older version node during an upgrade;
-	// backward compatibility must be maintained.
-	if d.DisplayName.Keyspace == "" {
-		d.DisplayName.Keyspace = pb.Namespace
-	}
 	return d
 }
 
@@ -267,13 +262,10 @@ func NewChangefeedGIDFromPB(pb *heartbeatpb.ChangefeedID) GID {
 
 func (c ChangeFeedID) ToPB() *heartbeatpb.ChangefeedID {
 	return &heartbeatpb.ChangefeedID{
-		Low:  c.Id.Low,
-		High: c.Id.High,
-		Name: c.Name(),
-		// The term namespace has been changed to keyspace.
-		// For backward compatibility during the upgrade process, namespace is preserved and now maps to keyspace.
-		Namespace: c.Keyspace(),
-		Keyspace:  c.Keyspace(),
+		Low:      c.Id.Low,
+		High:     c.Id.High,
+		Name:     c.Name(),
+		Keyspace: c.Keyspace(),
 	}
 }
 

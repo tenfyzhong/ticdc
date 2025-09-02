@@ -290,6 +290,5 @@ message ChangefeedID {
     uint64 high = 1;
     uint64 low = 2;
     string name = 3;
-    string namespace = 4 [deprecated = true];
-    string keyspace = 5;
+    string keyspace = 4;
 }
