@@ -42,7 +42,7 @@ type Manager interface {
 	TryUpdateGCSafePoint(ctx context.Context, checkpointTs common.Ts, forceUpdate bool) error
 	CheckStaleCheckpointTs(ctx context.Context, changefeedID common.ChangeFeedID, checkpointTs common.Ts) error
 	// TryUpdateKeypsaceGCBarrier tries to update gc barrier of a keyspace
-	TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, checkpointTs common.Ts, forceUpdate bool) error
+	TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error
 }
 
 // keyspaceGCBarrierInfo is the gc info for a keyspace
@@ -165,7 +165,7 @@ func (m *gcManager) CheckStaleCheckpointTs(
 	return nil
 }
 
-func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, checkpointTs common.Ts, forceUpdate bool) error {
+func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error {
 	var lastUpdatedTime time.Time
 	if lastUpdatedTimeResult, ok := m.keyspaceGCBarrierInfoMap.Load(keyspaceID); ok {
 		lastUpdatedTime = lastUpdatedTimeResult.(time.Time)
@@ -219,7 +219,11 @@ func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID u
 	}
 	m.keyspaceGCBarrierInfoMap.Store(keyspaceID, newBarrierInfo)
 
-	// TODO tenfyzhong 2025-09-01 11:03:32 set gauge
+	minGCBarrierMetric := minGCBarrierGauge.WithLabelValues(keyspaceName)
+	minGCBarrierMetric.Set(float64(oracle.ExtractPhysical(actual)))
+
+	cdcGcBarrierMetric := cdcGCBarrierGauge.WithLabelValues(keyspaceName)
+	cdcGcBarrierMetric.Set(float64(oracle.ExtractPhysical(checkpointTs)))
 
 	return nil
 }
