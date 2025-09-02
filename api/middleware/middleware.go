@@ -228,7 +228,11 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 			pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
 
 			meta, err := pdAPIClient.LoadKeyspace(c.Request.Context(), keyspace)
-			if err != nil {
+			if errors.IsKeyspaceNotExistError(err) {
+				c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+				c.Abort()
+				return
+			} else if err != nil {
 				c.IndentedJSON(http.StatusInternalServerError, api.NewHTTPError(err))
 				c.Abort()
 				return
