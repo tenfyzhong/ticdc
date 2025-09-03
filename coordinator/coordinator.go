@@ -479,7 +479,7 @@ func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, barrierMap ma
 // Otherwise we should update the global gc safepoint
 func (c *coordinator) updateGCSafepointByChangefeed(ctx context.Context, changefeedID common.ChangeFeedID) error {
 	// TODO tenfyzhong 2025-08-29 14:58:57 is next gen
-	if true {
+	if false {
 		barrierMap := c.controller.calculateKeyspaceGCBarrier()
 		return c.updateKeyspaceGcBarrier(ctx, barrierMap, changefeedID.Keyspace())
 	}
@@ -493,7 +493,7 @@ func (c *coordinator) updateGCSafepoint(
 	ctx context.Context,
 ) error {
 	// TODO tenfyzhong 2025-08-29 14:58:57 is next gen
-	if true {
+	if false {
 		return c.updateAllKeyspaceGcBarriers(ctx)
 	}
 	return c.updateGlobalGcSafepoint(ctx)
