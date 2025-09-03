@@ -232,16 +232,16 @@ func (mr *MockChangefeedInterfaceMockRecorder) Update(ctx, cfg, keyspace, name i
 }
 
 // VerifyTable mocks base method.
-func (m *MockChangefeedInterface) VerifyTable(ctx context.Context, cfg *v2.VerifyTableConfig) (*v2.Tables, error) {
+func (m *MockChangefeedInterface) VerifyTable(ctx context.Context, cfg *v2.VerifyTableConfig, keyspace string) (*v2.Tables, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyTable", ctx, cfg)
+	ret := m.ctrl.Call(m, "VerifyTable", ctx, cfg, keyspace)
 	ret0, _ := ret[0].(*v2.Tables)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // VerifyTable indicates an expected call of VerifyTable.
-func (mr *MockChangefeedInterfaceMockRecorder) VerifyTable(ctx, cfg interface{}) *gomock.Call {
+func (mr *MockChangefeedInterfaceMockRecorder) VerifyTable(ctx, cfg, keyspace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTable", reflect.TypeOf((*MockChangefeedInterface)(nil).VerifyTable), ctx, cfg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyTable", reflect.TypeOf((*MockChangefeedInterface)(nil).VerifyTable), ctx, cfg, keyspace)
 }
