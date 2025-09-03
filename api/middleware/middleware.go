@@ -229,7 +229,7 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 
 			meta, err := pdAPIClient.LoadKeyspace(c.Request.Context(), keyspace)
 			if errors.IsKeyspaceNotExistError(err) {
-				c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam.FastGen("URI:%s", c.Request.URL))
+				c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 				c.Abort()
 				return
 			} else if err != nil {
