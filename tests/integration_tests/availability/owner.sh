@@ -43,14 +43,14 @@ function test_kill_owner() {
 	# ensure the server become the owner
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
 	owner_pid=$(psutil $CDC_BINARY)
-	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/\"id/{print $4}')
+	owner_id=$($CDC_BINARY cli capture list 2>&1 | jq -r '.[] | select(."is-owner"==true) | .id')
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id
 	# run another server
 	echo "Start to run another server"
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --addr "127.0.0.1:8301" --logsuffix test_kill_owner.server2
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep -v \"$owner_id\" | grep -v cluster_id | grep id"
-	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | awk -F '"' '/\"id/{print $4}' | grep -v "$owner_id")
+	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | jq -r '.[].id' | grep -v "$owner_id")
 	echo "capture_id:" $capture_id
 	# kill the server
 	kill_cdc_pid $owner_pid
@@ -68,7 +68,7 @@ function test_hang_up_owner() {
 	# ensure the server become the owner
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
 	owner_pid=$(psutil $CDC_BINARY)
-	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/\"id/{print $4}')
+	owner_id=$($CDC_BINARY cli capture list 2>&1 | jq -r '.[] | select(."is-owner"==true) | .id')
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id
 	# run another server
@@ -77,7 +77,7 @@ function test_hang_up_owner() {
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep -v \"$owner_id\" | grep -v cluster_id | grep id"
 	# ensure $MAX_RETRIES "$CDC_BINARY cli capture list --server 'http://127.0.0.1:8301'  2>&1 | grep -v \"$owner_id\" | grep id"
 	# capture_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/\"id/{print $4}' | grep -v "$owner_id")
-	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | awk -F '"' '/\"id/{print $4}' | grep -v "$owner_id")
+	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | jq -r '.[].id' | grep -v "$owner_id")
 
 	echo "capture_id:" $capture_id
 	# stop the owner
@@ -99,7 +99,7 @@ function test_expire_owner() {
 	# ensure the server become the owner
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
 	owner_pid=$(psutil $CDC_BINARY)
-	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/\"id/{print $4}')
+	owner_id=$($CDC_BINARY cli capture list 2>&1 | jq -r '.[] | select(."is-owner"==true) | .id')
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id
 	# stop the owner
@@ -128,7 +128,7 @@ function test_owner_retryable_error() {
 	# ensure the server become the owner
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
 	owner_pid=$(psutil $CDC_BINARY)
-	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/\"id/{print $4}')
+	owner_id=$($CDC_BINARY cli capture list 2>&1 | jq -r '.[] | select(."is-owner"==true) | .id')
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id
 	export GO_FAILPOINTS='github.com/pingcap/ticdc/coordinator/coordinator-run-with-error=1*return(true);github.com/pingcap/ticdc/server/resign-failed=1*return(true)'
@@ -136,7 +136,7 @@ function test_owner_retryable_error() {
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --logsuffix test_owner_retryable_error.server2 --addr "127.0.0.1:8301"
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep -v \"$owner_id\" | grep -v cluster_id | grep id"
 	capture_pid=$(psutil $CDC_BINARY)
-	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | awk -F '"' '/\"id/{print $4}' | grep -v "$owner_id")
+	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | jq -r '.[].id' | grep -v "$owner_id")
 	echo "capture_id:" $capture_id
 	# resign the first capture, the second capture campaigns to be owner.
 	# However we have injected two failpoints, the second capture owner runs
@@ -148,7 +148,7 @@ function test_owner_retryable_error() {
 	# So the wc -l will be 2.
 	os=$(uname -s)
 	if [ "$os" == "Darwin" ]; then
-		ensure $MAX_RETRIES "pgrep -f $CDC_BINARY | wc -l | grep 2"
+		ensure $MAX_RETRIES "pgrep $CDC_BINARY | wc -l | grep 2"
 	else
 		ensure $MAX_RETRIES "ps -C $CDC_BINARY -o pid= | awk '{print \$1}' | wc -l | grep 2"
 	fi
@@ -167,7 +167,7 @@ function test_delete_owner_key() {
 	# ensure the server become the owner
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep '\"is-owner\": true'"
 	owner_pid=$(psutil $CDC_BINARY)
-	owner_id=$($CDC_BINARY cli capture list 2>&1 | awk -F '"' '/id/{print $4}')
+	owner_id=$($CDC_BINARY cli capture list 2>&1 | jq -r '.[] | select(."is-owner"==true) | .id')
 	owner_key=$(etcdctl get /tidb/cdc/default/__cdc_meta__/owner --prefix | grep -B 1 "$owner_id" | head -n 1)
 	echo "owner pid:" $owner_pid
 	echo "owner id" $owner_id
@@ -177,7 +177,7 @@ function test_delete_owner_key() {
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --addr "127.0.0.1:8301" --logsuffix test_gap_between_watch_capture.server2
 	ensure $MAX_RETRIES "$CDC_BINARY cli capture list 2>&1 | grep -v \"$owner_id\" | grep -v cluster_id | grep id"
 	capture_pid=$(psutil $CDC_BINARY)
-	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | awk -F '"' '/\"id/{print $4}' | grep -v "$owner_id")
+	capture_id=$($CDC_BINARY cli capture list --server 'http://127.0.0.1:8301' 2>&1 | jq -r '.[].id' | grep -v "$owner_id")
 	echo "capture_id:" $capture_id
 
 	etcdctl del $owner_key
