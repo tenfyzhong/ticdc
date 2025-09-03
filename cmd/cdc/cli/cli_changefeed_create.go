@@ -320,7 +320,7 @@ func (o *createChangefeedOptions) run(ctx context.Context, cmd *cobra.Command) e
 
 	createChangefeedCfg.ReplicaConfig.IgnoreIneligibleTable = ignoreIneligibleTables
 
-	info, err := o.apiClient.Changefeeds().Create(ctx, createChangefeedCfg)
+	info, err := o.apiClient.Changefeeds().Create(ctx, createChangefeedCfg, createChangefeedCfg.Keyspace)
 	if err != nil {
 		if strings.Contains(err.Error(), "ErrInvalidIgnoreEventType") {
 			supportedEventTypes := filter.SupportedEventTypes()

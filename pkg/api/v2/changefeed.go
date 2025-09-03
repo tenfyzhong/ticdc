@@ -32,7 +32,7 @@ type ChangefeedsGetter interface {
 // We can also mock the changefeed operations by implement this interface.
 type ChangefeedInterface interface {
 	// Create creates a changefeed
-	Create(ctx context.Context, cfg *v2.ChangefeedConfig) (*v2.ChangeFeedInfo, error)
+	Create(ctx context.Context, cfg *v2.ChangefeedConfig, keyspace string) (*v2.ChangeFeedInfo, error)
 	// VerifyTable verifies table for a changefeed
 	VerifyTable(ctx context.Context, cfg *v2.VerifyTableConfig) (*v2.Tables, error)
 	// Update updates a changefeed
@@ -72,10 +72,12 @@ func newChangefeeds(c *APIV2Client) *changefeeds {
 
 func (c *changefeeds) Create(ctx context.Context,
 	cfg *v2.ChangefeedConfig,
+	keyspace string,
 ) (*v2.ChangeFeedInfo, error) {
 	result := &v2.ChangeFeedInfo{}
+	u := fmt.Sprintf("changefeeds?keyspace=%s", keyspace)
 	err := c.client.Post().
-		WithURI("changefeeds").
+		WithURI(u).
 		WithBody(cfg).
 		Do(ctx).Into(result)
 	return result, err
