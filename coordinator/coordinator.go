@@ -24,6 +24,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
+	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	cerror "github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/messaging"
@@ -478,8 +479,7 @@ func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, barrierMap ma
 // On next gen, we should update the gc barrier for the specific keyspace
 // Otherwise we should update the global gc safepoint
 func (c *coordinator) updateGCSafepointByChangefeed(ctx context.Context, changefeedID common.ChangeFeedID) error {
-	// TODO tenfyzhong 2025-08-29 14:58:57 is next gen
-	if false {
+	if kerneltype.IsNextGen() {
 		barrierMap := c.controller.calculateKeyspaceGCBarrier()
 		return c.updateKeyspaceGcBarrier(ctx, barrierMap, changefeedID.Keyspace())
 	}
@@ -489,11 +489,8 @@ func (c *coordinator) updateGCSafepointByChangefeed(ctx context.Context, changef
 // updateGCSafepoint update the gc safepoint
 // On next gen, we should update the gc barrier for all keyspaces
 // Otherwise we should update the global gc safepoint
-func (c *coordinator) updateGCSafepoint(
-	ctx context.Context,
-) error {
-	// TODO tenfyzhong 2025-08-29 14:58:57 is next gen
-	if false {
+func (c *coordinator) updateGCSafepoint(ctx context.Context) error {
+	if kerneltype.IsNextGen() {
 		return c.updateAllKeyspaceGcBarriers(ctx)
 	}
 	return c.updateGlobalGcSafepoint(ctx)
