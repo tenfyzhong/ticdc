@@ -309,7 +309,7 @@ func TestSplitBalanceGroupsWithNodeRemove(t *testing.T) {
 	nodeManager.GetAliveNodes()["node3"] = &node.Info{ID: "node3"}
 
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
 		common.DDLSpan, &heartbeatpb.TableSpanStatus{
@@ -404,7 +404,7 @@ func TestSplitTableBalanceWhenTrafficUnbalanced(t *testing.T) {
 	nodeManager.GetAliveNodes()["node2"] = &node.Info{ID: "node2"}
 	nodeManager.GetAliveNodes()["node3"] = &node.Info{ID: "node3"}
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
 		common.DDLSpan, &heartbeatpb.TableSpanStatus{
@@ -1065,7 +1065,7 @@ func TestDefaultSpanIntoSplit(t *testing.T) {
 	nodeManager.GetAliveNodes()["node1"] = &node.Info{ID: "node1"}
 	nodeManager.GetAliveNodes()["node2"] = &node.Info{ID: "node2"}
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
 		common.DDLSpan, &heartbeatpb.TableSpanStatus{
@@ -1495,7 +1495,7 @@ func TestLargeTableInitialization(t *testing.T) {
 	nodeManager.GetAliveNodes()["node3"] = &node.Info{ID: "node3"}
 
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
 		common.DDLSpan, &heartbeatpb.TableSpanStatus{

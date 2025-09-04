@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/testutil"
 	"github.com/pingcap/ticdc/pkg/common"
@@ -171,7 +170,7 @@ func TestSplitRegionsByWrittenKeysHotspot2(t *testing.T) {
 func TestSplitRegionsByWrittenKeysCold(t *testing.T) {
 	preTest()
 	re := require.New(t)
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	splitter := newWriteBytesSplitter(cfID)
 	baseSpanNum := 3
 	regions, startKeys, endKeys := prepareRegionsInfo(make([]int, 7))
@@ -196,7 +195,7 @@ func TestSplitRegionsByWrittenKeysCold(t *testing.T) {
 func TestNotSplitRegionsByWrittenKeysCold(t *testing.T) {
 	preTest()
 	re := require.New(t)
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	splitter := newWriteBytesSplitter(cfID)
 	baseSpanNum := 7 // spans >= regions, expect each region as a span
 	regions, startKeys, endKeys := prepareRegionsInfo(make([]int, 7))
@@ -216,7 +215,7 @@ func TestSplitRegionsByWrittenKeysConfig(t *testing.T) {
 	preTest()
 	re := require.New(t)
 
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	splitter := newWriteBytesSplitter(cfID)
 	regions, _, _ := prepareRegionsInfo([]int{1, 1, 1, 1, 1, 1, 1})
 	// verify table id propagated and spans not empty when spansNum>0
@@ -244,7 +243,7 @@ func TestSplitRegionEven(t *testing.T) {
 			WrittenBytes: 2,
 		}
 	}
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	splitter := newWriteBytesSplitter(cfID)
 	info := splitter.splitRegionsByWrittenBytesV1(tblID, regions, 5)
 	require.Len(t, info.RegionCounts, 5)
@@ -261,7 +260,7 @@ func TestSplitRegionEven(t *testing.T) {
 func TestSpanRegionLimit(t *testing.T) {
 	preTest()
 	// simplify: ensure function runs with many regions without panicking
-	cfID := common.NewChangeFeedIDWithName("test")
+	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspace)
 	splitter := newWriteBytesSplitter(cfID)
 
 	// deterministically generate writtenKeys with varied distribution
@@ -286,10 +285,6 @@ func TestSpanRegionLimit(t *testing.T) {
 	spanNum := 100
 	info := splitter.splitRegionsByWrittenBytesV1(0, cloneRegions(regions), spanNum)
 	require.GreaterOrEqual(t, len(info.RegionCounts), 1)
-}
-
-func (m *mockPDAPIClient) LoadKeyspace(ctx context.Context, name string) (*keyspacepb.KeyspaceMeta, error) {
-	return nil, nil
 }
 
 func preTest() {
