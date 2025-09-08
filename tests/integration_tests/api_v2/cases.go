@@ -184,11 +184,11 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	data := `{
 		"changefeed_id": "changefeed-test-v2-black-hole-1",
 		"sink_uri": "blackhole://",
-        "keyspace": "test"
+        "keyspace": "default"
 	}`
 	resp := client.Post().
 		WithBody(bytes.NewReader([]byte(data))).
-		WithURI("/changefeeds?keyspace=test").
+		WithURI("/changefeeds?keyspace=default").
 		Do(ctx)
 	assertResponseIsOK(resp)
 	changefeedInfo1 := &ChangeFeedInfo{}
@@ -197,7 +197,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}
 
 	ensureChangefeed(ctx, client, changefeedInfo1.ID, "normal")
-	resp = client.Get().WithURI("/changefeeds/" + changefeedInfo1.ID + "?keyspace=test").Do(ctx)
+	resp = client.Get().WithURI("/changefeeds/" + changefeedInfo1.ID + "?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	cfInfo := &ChangeFeedInfo{}
 	if err := json.Unmarshal(resp.body, cfInfo); err != nil {
@@ -210,7 +210,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}
 
 	// pause changefeed
-	resp = client.Post().WithURI("changefeeds/changefeed-test-v2-black-hole-1/pause?keyspace=test").Do(ctx)
+	resp = client.Post().WithURI("changefeeds/changefeed-test-v2-black-hole-1/pause?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	assertEmptyResponseBody(resp)
 
@@ -225,7 +225,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}`
 	resp = client.Put().
 		WithBody(bytes.NewReader([]byte(data))).
-		WithURI("/changefeeds/changefeed-test-v2-black-hole-1?keyspace=test").
+		WithURI("/changefeeds/changefeed-test-v2-black-hole-1?keyspace=default").
 		Do(ctx)
 	assertResponseIsOK(resp)
 	changefeedInfo1 = &ChangeFeedInfo{}
@@ -243,13 +243,13 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}
 	resp = client.Put().
 		WithBody(bytes.NewReader(cdata)).
-		WithURI("/changefeeds/changefeed-test-v2-black-hole-1?keyspace=test").
+		WithURI("/changefeeds/changefeed-test-v2-black-hole-1?keyspace=default").
 		Do(ctx)
 	assertResponseIsOK(resp)
 
 	// sleep to wait owner to tick
 	time.Sleep(2 * time.Second)
-	resp = client.Get().WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=test").Do(ctx)
+	resp = client.Get().WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	cf := &ChangeFeedInfo{}
 	if err := json.Unmarshal(resp.body, cf); err != nil {
@@ -262,7 +262,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}
 
 	// list changefeed
-	resp = client.Get().WithURI("changefeeds?state=stopped&keyspace=test").Do(ctx)
+	resp = client.Get().WithURI("changefeeds?state=stopped&keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	changefeedList := &ListResponse[ChangefeedCommonInfo]{}
 	if err := json.Unmarshal(resp.body, changefeedList); err != nil {
@@ -274,7 +274,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 
 	resp = client.Post().WithBody(bytes.NewReader(
 		[]byte(`{"overwrite_checkpoint_ts":0}`))).
-		WithURI("changefeeds/changefeed-test-v2-black-hole-1/resume?keyspace=test").Do(ctx)
+		WithURI("changefeeds/changefeed-test-v2-black-hole-1/resume?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	assertEmptyResponseBody(resp)
 
@@ -282,12 +282,12 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	ensureChangefeed(ctx, client, changefeedInfo1.ID, "normal")
 
 	resp = client.Delete().
-		WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=test").Do(ctx)
+		WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	assertEmptyResponseBody(resp)
 
 	resp = client.Get().
-		WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=test").Do(ctx)
+		WithURI("changefeeds/changefeed-test-v2-black-hole-1?keyspace=default").Do(ctx)
 	if resp.statusCode == 200 {
 		log.Panic("delete changefeed failed", zap.Any("resp", resp))
 	}
@@ -309,7 +309,7 @@ func testCreateChangefeed(ctx context.Context, client *CDCRESTClient) error {
 		Do(ctx)
 	assertResponseIsOK(resp)
 	ensureChangefeed(ctx, client, config.ID, "normal")
-	resp = client.Get().WithURI("/changefeeds/" + config.ID + "?keyspace=test").Do(ctx)
+	resp = client.Get().WithURI("/changefeeds/" + config.ID + "?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	cfInfo := &ChangeFeedInfo{}
 	if err := json.Unmarshal(resp.body, cfInfo); err != nil {
@@ -318,7 +318,7 @@ func testCreateChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	if !reflect.DeepEqual(cfInfo.Config, config.ReplicaConfig) {
 		log.Panic("config is not equals", zap.Any("add", config.ReplicaConfig), zap.Any("get", cfInfo.Config))
 	}
-	resp = client.Delete().WithURI("/changefeeds/" + config.ID + "?keyspace=test").Do(ctx)
+	resp = client.Delete().WithURI("/changefeeds/" + config.ID + "?keyspace=default").Do(ctx)
 	assertResponseIsOK(resp)
 	return nil
 }
@@ -427,7 +427,7 @@ func ensureChangefeed(ctx context.Context, client *CDCRESTClient, id, state stri
 	var info *ChangeFeedInfo
 	for i := 0; i < 10; i++ {
 		resp := client.Get().
-			WithURI("/changefeeds/" + id + "?keyspace=test").Do(ctx)
+			WithURI("/changefeeds/" + id + "?keyspace=default").Do(ctx)
 		if resp.statusCode == 200 {
 			info = &ChangeFeedInfo{}
 			if err := json.Unmarshal(resp.body, info); err != nil {
