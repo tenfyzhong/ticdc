@@ -188,7 +188,7 @@ func testChangefeed(ctx context.Context, client *CDCRESTClient) error {
 	}`
 	resp := client.Post().
 		WithBody(bytes.NewReader([]byte(data))).
-		WithURI("/changefeeds").
+		WithURI("/changefeeds?keyspace=test").
 		Do(ctx)
 	assertResponseIsOK(resp)
 	changefeedInfo1 := &ChangeFeedInfo{}
