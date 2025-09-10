@@ -36,7 +36,6 @@ const (
 	DispatcherOrchestrator  = "DispatcherOrchestrator"
 	DefaultPDClock          = "PDClock-0"
 	PDAPIClient             = "PDAPIClient"
-	RegionCache             = "RegionCache"
 	RegionCacheRegistryKey  = "RegionCacheRegistry"
 )
 
