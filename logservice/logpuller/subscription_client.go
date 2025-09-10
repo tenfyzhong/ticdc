@@ -188,10 +188,12 @@ type subscriptionClient struct {
 	metrics   sharedClientMetrics
 	clusterID uint64
 
-	pd           pd.Client
-	regionCache  *tikv.RegionCache
-	pdClock      pdutil.Clock
-	lockResolver txnutil.LockResolver
+	pd pd.Client
+	// TODO tenfyzhong 2025-09-10 10:39:45 Remove region cache
+	regionCache         *tikv.RegionCache
+	regionCacheRegistry *appcontext.RegionCacheRegistry
+	pdClock             pdutil.Clock
+	lockResolver        txnutil.LockResolver
 
 	ds dynstream.DynamicStream[int, SubscriptionID, regionEvent, *subscribedSpan, *regionEventHandler]
 	// the following three fields are used to manage feedback from ds and notify other goroutines
@@ -231,10 +233,12 @@ func NewSubscriptionClient(
 	subClient := &subscriptionClient{
 		config: config,
 
-		pd:           pd,
-		regionCache:  appcontext.GetService[*tikv.RegionCache](appcontext.RegionCache),
-		pdClock:      appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
-		lockResolver: lockResolver,
+		pd: pd,
+		// TODO tenfyzhong 2025-09-10 10:39:45 Remove region cache
+		regionCache:         appcontext.GetService[*tikv.RegionCache](appcontext.RegionCache),
+		regionCacheRegistry: appcontext.GetService[*appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey),
+		pdClock:             appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
+		lockResolver:        lockResolver,
 
 		credential: credential,
 
