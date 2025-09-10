@@ -668,8 +668,9 @@ func (s *subscriptionClient) divideSpanAndScheduleRegionRequests(
 
 		for _, regionMeta := range regionMetas {
 			regionSpan := heartbeatpb.TableSpan{
-				StartKey: regionMeta.StartKey,
-				EndKey:   regionMeta.EndKey,
+				StartKey:   regionMeta.StartKey,
+				EndKey:     regionMeta.EndKey,
+				KeyspaceID: nextSpan.KeyspaceID,
 			}
 			// NOTE: the End key return by the PD API will be nil to represent the biggest key.
 			// So we need to fix it by calling spanz.HackSpan.
