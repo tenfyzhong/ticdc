@@ -24,33 +24,43 @@ import (
 
 // RegionCacheRegistry is a factory for RegionCache
 type RegionCacheRegistry struct {
-	keyspaceIDRegionCacheMap   sync.Map
-	keyspaceNameRegionCacheMap sync.Map
+	keyspaceIDRegionCacheMap   map[uint32]*tikv.RegionCache
+	keyspaceNameRegionCacheMap map[string]*tikv.RegionCache
+
+	locker sync.RWMutex
 }
 
 func NewRegionCacheRegistry() *RegionCacheRegistry {
-	return &RegionCacheRegistry{}
+	return &RegionCacheRegistry{
+		keyspaceIDRegionCacheMap:   make(map[uint32]*tikv.RegionCache),
+		keyspaceNameRegionCacheMap: make(map[string]*tikv.RegionCache),
+	}
 }
 
 // Get returns regionCache for keyspace
 func (f *RegionCacheRegistry) Get(keyspaceID uint32) *tikv.RegionCache {
-	if regionCache, ok := f.keyspaceIDRegionCacheMap.Load(keyspaceID); ok {
-		return regionCache.(*tikv.RegionCache)
-	}
-	return nil
+	f.locker.RLock()
+	defer f.locker.Unlock()
+
+	return f.keyspaceIDRegionCacheMap[keyspaceID]
 }
 
 func (f *RegionCacheRegistry) GetByName(keyspace string) *tikv.RegionCache {
-	if regionCache, ok := f.keyspaceNameRegionCacheMap.Load(keyspace); ok {
-		return regionCache.(*tikv.RegionCache)
-	}
-	return nil
+	f.locker.RLock()
+	defer f.locker.Unlock()
+
+	return f.keyspaceNameRegionCacheMap[keyspace]
 }
 
 // Register registers regionCache for keyspace
 // For classic cdc, the keyspace is alwasy "default", keyspaceID is always 0
 func (f *RegionCacheRegistry) Register(keyspace string, keyspaceID uint32, pdClient pd.Client) error {
-	if f.Get(keyspaceID) != nil {
+	f.locker.Lock()
+	defer f.locker.Unlock()
+
+	// The keyspace has been registered
+	// we don't need to register again
+	if f.keyspaceIDRegionCacheMap[keyspaceID] != nil {
 		return nil
 	}
 
@@ -64,7 +74,7 @@ func (f *RegionCacheRegistry) Register(keyspace string, keyspaceID uint32, pdCli
 	} else {
 		regionCache = tikv.NewRegionCache(pdClient)
 	}
-	f.keyspaceIDRegionCacheMap.Store(keyspaceID, regionCache)
-	f.keyspaceNameRegionCacheMap.Store(keyspace, regionCache)
+	f.keyspaceIDRegionCacheMap[keyspaceID] = regionCache
+	f.keyspaceNameRegionCacheMap[keyspace] = regionCache
 	return nil
 }
