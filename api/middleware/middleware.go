@@ -243,6 +243,8 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+
+			c.Set(api.CtxKeyspaceMeta, meta)
 		}
 
 		c.Next()
