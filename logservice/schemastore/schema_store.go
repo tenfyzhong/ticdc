@@ -400,7 +400,7 @@ func (s *schemaStore) RegisterKeyspace(
 		return nil
 	}
 
-	regionCacheRegistry := appcontext.GetService[*appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
+	regionCacheRegistry := appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
 	regionCacheRegistry.Register(keyspaceName, keyspaceID, s.dataStorage.pdCli)
 
 	subClient := appcontext.GetService[logpuller.SubscriptionClient](appcontext.SubscriptionClient)

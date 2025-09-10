@@ -189,7 +189,7 @@ type subscriptionClient struct {
 	clusterID uint64
 
 	pd                  pd.Client
-	regionCacheRegistry *appcontext.RegionCacheRegistry
+	regionCacheRegistry appcontext.RegionCacheRegistry
 	pdClock             pdutil.Clock
 	lockResolver        txnutil.LockResolver
 
@@ -232,7 +232,7 @@ func NewSubscriptionClient(
 		config: config,
 
 		pd:                  pd,
-		regionCacheRegistry: appcontext.GetService[*appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey),
+		regionCacheRegistry: appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey),
 		pdClock:             appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
 		lockResolver:        lockResolver,
 

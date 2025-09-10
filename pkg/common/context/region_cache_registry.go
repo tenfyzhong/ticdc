@@ -22,30 +22,36 @@ import (
 	pd "github.com/tikv/pd/client"
 )
 
-// RegionCacheRegistry is a factory for RegionCache
-type RegionCacheRegistry struct {
+type RegionCacheRegistry interface {
+	Get(keyspaceID uint32) *tikv.RegionCache
+	GetByName(keyspace string) *tikv.RegionCache
+	Register(keyspace string, keyspaceID uint32, pdClient pd.Client) error
+}
+
+// regionCacheRegistry is a factory for RegionCache
+type regionCacheRegistry struct {
 	keyspaceIDRegionCacheMap   map[uint32]*tikv.RegionCache
 	keyspaceNameRegionCacheMap map[string]*tikv.RegionCache
 
 	locker sync.RWMutex
 }
 
-func NewRegionCacheRegistry() *RegionCacheRegistry {
-	return &RegionCacheRegistry{
+func NewRegionCacheRegistry() *regionCacheRegistry {
+	return &regionCacheRegistry{
 		keyspaceIDRegionCacheMap:   make(map[uint32]*tikv.RegionCache),
 		keyspaceNameRegionCacheMap: make(map[string]*tikv.RegionCache),
 	}
 }
 
 // Get returns regionCache for keyspace
-func (f *RegionCacheRegistry) Get(keyspaceID uint32) *tikv.RegionCache {
+func (f *regionCacheRegistry) Get(keyspaceID uint32) *tikv.RegionCache {
 	f.locker.RLock()
 	defer f.locker.Unlock()
 
 	return f.keyspaceIDRegionCacheMap[keyspaceID]
 }
 
-func (f *RegionCacheRegistry) GetByName(keyspace string) *tikv.RegionCache {
+func (f *regionCacheRegistry) GetByName(keyspace string) *tikv.RegionCache {
 	f.locker.RLock()
 	defer f.locker.Unlock()
 
@@ -54,7 +60,7 @@ func (f *RegionCacheRegistry) GetByName(keyspace string) *tikv.RegionCache {
 
 // Register registers regionCache for keyspace
 // For classic cdc, the keyspace is alwasy "default", keyspaceID is always 0
-func (f *RegionCacheRegistry) Register(keyspace string, keyspaceID uint32, pdClient pd.Client) error {
+func (f *regionCacheRegistry) Register(keyspace string, keyspaceID uint32, pdClient pd.Client) error {
 	f.locker.Lock()
 	defer f.locker.Unlock()
 
