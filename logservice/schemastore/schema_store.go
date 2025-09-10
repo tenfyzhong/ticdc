@@ -58,7 +58,7 @@ type SchemaStore interface {
 	FetchTableTriggerDDLEvents(tableFilter filter.Filter, start uint64, limit int) ([]commonEvent.DDLEvent, uint64, error)
 
 	// RegisterKeyspace register a keyspace to fetch table ddl
-	RegisterKeyspace(ctx context.Context, kvStorage kv.Storage, keyspaceName string, keyspaceID uint32) error
+	RegisterKeyspace(ctx context.Context, keyspaceName string, keyspaceID uint32) error
 }
 
 type DDLEventState struct {
@@ -69,7 +69,8 @@ type DDLEventState struct {
 type schemaStore struct {
 	pdClock pdutil.Clock
 
-	ddlJobFetcher         *ddlJobFetcher
+	kvStorage kv.Storage
+
 	keyspaceDDLJobFetcher map[uint32]*ddlJobFetcher
 	fetcherLocker         sync.Locker
 
@@ -106,20 +107,10 @@ func New(
 	dataStorage := newPersistentStorage(ctx, root, pdCli, kvStorage)
 	s := &schemaStore{
 		pdClock:       appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
+		kvStorage:     kvStorage,
 		unsortedCache: newDDLCache(),
 		dataStorage:   dataStorage,
 		notifyCh:      make(chan interface{}, 4),
-	}
-
-	if kerneltype.IsClassic() {
-		// For classic mode, we use a fixed keyspace ID 0
-		s.ddlJobFetcher = newDDLJobFetcher(
-			ctx,
-			subClient,
-			kvStorage,
-			0,
-			s.writeDDLEvent,
-			s.advancePendingResolvedTs)
 	}
 
 	return s
@@ -138,9 +129,8 @@ func (s *schemaStore) initialize(ctx context.Context) {
 	s.pendingResolvedTs.Store(upperBound.ResolvedTs)
 	s.resolvedTs.Store(upperBound.ResolvedTs)
 
-	// ddlJobFetcher is only used in classic mode
-	if s.ddlJobFetcher != nil {
-		s.ddlJobFetcher.run(upperBound.ResolvedTs)
+	if kerneltype.IsClassic() {
+		s.RegisterKeyspace(ctx, common.DefaultKeyspace, common.DefaultKeyspaceID)
 	}
 
 	log.Info("schema store initialized",
@@ -394,16 +384,12 @@ func (s *schemaStore) waitResolvedTs(tableID int64, ts uint64, logInterval time.
 
 // RegisterKeyspace register a keyspace to fetch table ddl
 // Should be called after changefeed creates
+// For classic mode, it will be called by a default keyspace in the startup starge
 func (s *schemaStore) RegisterKeyspace(
 	ctx context.Context,
-	kvStorage kv.Storage,
 	keyspaceName string,
 	keyspaceID uint32,
 ) error {
-	if kerneltype.IsClassic() {
-		return nil
-	}
-
 	s.fetcherLocker.Lock()
 	defer s.fetcherLocker.Unlock()
 
@@ -422,7 +408,7 @@ func (s *schemaStore) RegisterKeyspace(
 	ddlJobFetcher := newDDLJobFetcher(
 		ctx,
 		subClient,
-		kvStorage,
+		s.kvStorage,
 		keyspaceID,
 		s.writeDDLEvent,
 		s.advancePendingResolvedTs,
