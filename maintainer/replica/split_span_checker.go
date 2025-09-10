@@ -172,7 +172,8 @@ func NewSplitSpanChecker(changefeedID common.ChangeFeedID, groupID replica.Group
 	if schedulerCfg == nil {
 		log.Panic("scheduler config is nil, please check the config", zap.String("changefeed", changefeedID.Name()))
 	}
-	regionCache := appcontext.GetService[split.RegionCache](appcontext.RegionCache)
+	regionCacheRegistry := appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
+	regionCache := regionCacheRegistry.GetByName(changefeedID.Keyspace())
 	return &SplitSpanChecker{
 		changefeedID:           changefeedID,
 		groupID:                groupID,

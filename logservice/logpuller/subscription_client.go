@@ -188,10 +188,10 @@ type subscriptionClient struct {
 	metrics   sharedClientMetrics
 	clusterID uint64
 
-	pd           pd.Client
-	regionCache  *tikv.RegionCache
-	pdClock      pdutil.Clock
-	lockResolver txnutil.LockResolver
+	pd                  pd.Client
+	regionCacheRegistry appcontext.RegionCacheRegistry
+	pdClock             pdutil.Clock
+	lockResolver        txnutil.LockResolver
 
 	ds dynstream.DynamicStream[int, SubscriptionID, regionEvent, *subscribedSpan, *regionEventHandler]
 	// the following three fields are used to manage feedback from ds and notify other goroutines
@@ -231,10 +231,10 @@ func NewSubscriptionClient(
 	subClient := &subscriptionClient{
 		config: config,
 
-		pd:           pd,
-		regionCache:  appcontext.GetService[*tikv.RegionCache](appcontext.RegionCache),
-		pdClock:      appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
-		lockResolver: lockResolver,
+		pd:                  pd,
+		regionCacheRegistry: appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey),
+		pdClock:             appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
+		lockResolver:        lockResolver,
 
 		credential: credential,
 
@@ -562,7 +562,19 @@ func (s *subscriptionClient) handleRegions(ctx context.Context, eg *errgroup.Gro
 
 func (s *subscriptionClient) attachRPCContextForRegion(ctx context.Context, region regionInfo) (regionInfo, bool) {
 	bo := tikv.NewBackoffer(ctx, tikvRequestMaxBackoff)
-	rpcCtx, err := s.regionCache.GetTiKVRPCContext(bo, region.verID, kvclientv2.ReplicaReadLeader, 0)
+	regionCache := s.regionCacheRegistry.Get(region.span.KeyspaceID)
+	if regionCache == nil {
+		// This block is not expected to happen, but it's safe to return it.
+		log.Error("subscription client get region cache fail",
+			zap.Uint64("subscriptionID", uint64(region.subscribedSpan.subID)),
+			zap.Uint64("regionID", region.verID.GetID()),
+			zap.Uint32("keyspaceID", region.span.KeyspaceID),
+		)
+		s.onRegionFail(newRegionErrorInfo(region, &rpcCtxUnavailableErr{verID: region.verID}))
+		return region, false
+	}
+
+	rpcCtx, err := regionCache.GetTiKVRPCContext(bo, region.verID, kvclientv2.ReplicaReadLeader, 0)
 	if rpcCtx != nil {
 		region.rpcCtx = rpcCtx
 		return region, true
@@ -619,8 +631,17 @@ func (s *subscriptionClient) divideSpanAndScheduleRegionRequests(
 			zap.Uint64("subscriptionID", uint64(subscribedSpan.subID)),
 			zap.Any("span", nextSpan))
 
+		regionCache := s.regionCacheRegistry.Get(nextSpan.KeyspaceID)
+		if regionCache == nil {
+			// This block is not expected to happen, but it's safe to return it.
+			log.Error("subscription client get region cache fail",
+				zap.Uint64("subscriptionID", uint64(subscribedSpan.subID)),
+				zap.Any("span", nextSpan))
+			return cerror.ErrInternalServerError
+		}
+
 		backoff := tikv.NewBackoffer(ctx, tikvRequestMaxBackoff)
-		regions, err := s.regionCache.BatchLoadRegionsWithKeyRange(backoff, nextSpan.StartKey, nextSpan.EndKey, limit)
+		regions, err := regionCache.BatchLoadRegionsWithKeyRange(backoff, nextSpan.StartKey, nextSpan.EndKey, limit)
 		if err != nil {
 			log.Warn("subscription client load regions failed",
 				zap.Uint64("subscriptionID", uint64(subscribedSpan.subID)),
@@ -647,8 +668,9 @@ func (s *subscriptionClient) divideSpanAndScheduleRegionRequests(
 
 		for _, regionMeta := range regionMetas {
 			regionSpan := heartbeatpb.TableSpan{
-				StartKey: regionMeta.StartKey,
-				EndKey:   regionMeta.EndKey,
+				StartKey:   regionMeta.StartKey,
+				EndKey:     regionMeta.EndKey,
+				KeyspaceID: subscribedSpan.span.KeyspaceID,
 			}
 			// NOTE: the End key return by the PD API will be nil to represent the biggest key.
 			// So we need to fix it by calling spanz.HackSpan.
@@ -730,6 +752,15 @@ func (s *subscriptionClient) handleErrors(ctx context.Context) error {
 }
 
 func (s *subscriptionClient) doHandleError(ctx context.Context, errInfo regionErrorInfo) error {
+	regionCache := s.regionCacheRegistry.Get(errInfo.span.KeyspaceID)
+	if regionCache == nil {
+		// This block is not expected to happen, but it's safe to return it.
+		log.Error("subscription client handle error fail",
+			zap.Uint64("subscriptionID", uint64(errInfo.subscribedSpan.subID)),
+			zap.Uint32("keyspaceID", errInfo.span.KeyspaceID))
+		return cerror.ErrInternalServerError
+	}
+
 	err := errors.Cause(errInfo.err)
 	switch eerr := err.(type) {
 	case *eventError:
@@ -741,7 +772,7 @@ func (s *subscriptionClient) doHandleError(ctx context.Context, errInfo regionEr
 
 		if notLeader := innerErr.GetNotLeader(); notLeader != nil {
 			metricFeedNotLeaderCounter.Inc()
-			s.regionCache.UpdateLeader(errInfo.verID, notLeader.GetLeader(), errInfo.rpcCtx.AccessIdx)
+			regionCache.UpdateLeader(errInfo.verID, notLeader.GetLeader(), errInfo.rpcCtx.AccessIdx)
 			s.scheduleRegionRequest(ctx, errInfo.regionInfo)
 			return nil
 		}
@@ -791,13 +822,13 @@ func (s *subscriptionClient) doHandleError(ctx context.Context, errInfo regionEr
 		metricGetStoreErr.Inc()
 		bo := tikv.NewBackoffer(ctx, tikvRequestMaxBackoff)
 		// cannot get the store the region belongs to, so we need to reload the region.
-		s.regionCache.OnSendFail(bo, errInfo.rpcCtx, true, err)
+		regionCache.OnSendFail(bo, errInfo.rpcCtx, true, err)
 		s.scheduleRangeRequest(ctx, errInfo.span, errInfo.subscribedSpan, errInfo.filterLoop)
 		return nil
 	case *sendRequestToStoreErr:
 		metricStoreSendRequestErr.Inc()
 		bo := tikv.NewBackoffer(ctx, tikvRequestMaxBackoff)
-		s.regionCache.OnSendFail(bo, errInfo.rpcCtx, regionScheduleReload, err)
+		regionCache.OnSendFail(bo, errInfo.rpcCtx, regionScheduleReload, err)
 		s.scheduleRegionRequest(ctx, errInfo.regionInfo)
 		return nil
 	case *requestCancelledErr:
