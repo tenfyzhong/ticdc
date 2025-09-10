@@ -58,12 +58,15 @@ type ddlJobFetcher struct {
 	advanceResolvedTs func(resolvedTS uint64)
 
 	kvStorage kv.Storage
+
+	keyspaceID uint32
 }
 
 func newDDLJobFetcher(
 	ctx context.Context,
 	subClient logpuller.SubscriptionClient,
 	kvStorage kv.Storage,
+	keyspaceID uint32,
 	cacheDDLEvent func(ddlEvent DDLJobWithCommitTs),
 	advanceResolvedTs func(resolvedTS uint64),
 ) *ddlJobFetcher {
@@ -73,6 +76,7 @@ func newDDLJobFetcher(
 		cacheDDLEvent:     cacheDDLEvent,
 		advanceResolvedTs: advanceResolvedTs,
 		kvStorage:         kvStorage,
+		keyspaceID:        keyspaceID,
 	}
 	ddlJobFetcher.resolvedTsTracker.resolvedTsItemMap = make(map[logpuller.SubscriptionID]*resolvedTsItem)
 	ddlJobFetcher.resolvedTsTracker.resolvedTsHeap = heap.NewHeap[*resolvedTsItem]()
@@ -81,7 +85,7 @@ func newDDLJobFetcher(
 }
 
 func (p *ddlJobFetcher) run(startTs uint64) {
-	for _, span := range getAllDDLSpan() {
+	for _, span := range getAllDDLSpan(p.keyspaceID) {
 		subID := p.subClient.AllocSubscriptionID()
 		item := &resolvedTsItem{
 			resolvedTs: 0,
@@ -257,19 +261,21 @@ const (
 	JobHistoryID = metadef.TiDBDDLHistoryTableID
 )
 
-func getAllDDLSpan() []heartbeatpb.TableSpan {
+func getAllDDLSpan(keyspaceID uint32) []heartbeatpb.TableSpan {
 	spans := make([]heartbeatpb.TableSpan, 0, 2)
 	start, end := common.GetTableRange(JobTableID)
 	spans = append(spans, heartbeatpb.TableSpan{
-		TableID:  JobTableID,
-		StartKey: common.ToComparableKey(start),
-		EndKey:   common.ToComparableKey(end),
+		TableID:    JobTableID,
+		StartKey:   common.ToComparableKey(start),
+		EndKey:     common.ToComparableKey(end),
+		KeyspaceID: keyspaceID,
 	})
 	start, end = common.GetTableRange(JobHistoryID)
 	spans = append(spans, heartbeatpb.TableSpan{
-		TableID:  JobHistoryID,
-		StartKey: common.ToComparableKey(start),
-		EndKey:   common.ToComparableKey(end),
+		TableID:    JobHistoryID,
+		StartKey:   common.ToComparableKey(start),
+		EndKey:     common.ToComparableKey(end),
+		KeyspaceID: keyspaceID,
 	})
 	return spans
 }

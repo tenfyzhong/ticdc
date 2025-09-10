@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/api/middleware"
 	"github.com/pingcap/ticdc/downstreamadapter/sink"
@@ -33,6 +34,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/api"
 	"github.com/pingcap/ticdc/pkg/apperror"
 	"github.com/pingcap/ticdc/pkg/common"
+	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
@@ -98,6 +100,17 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		_ = c.Error(errors.ErrAPIInvalidParam.GenWithStack(
 			"invalid keyspace: %s", cfg.ID))
 		return
+	}
+
+	var keyspaceMeta *keyspacepb.KeyspaceMeta
+	var ok bool
+	if obj, exists := c.Get(api.CtxKeyspaceMeta); exists {
+		keyspaceMeta, ok = obj.(*keyspacepb.KeyspaceMeta)
+		if !ok {
+			_ = c.Error(errors.ErrLoadKeyspaceFailed.GenWithStack("invalid keyspace meta"))
+			return
+		}
+
 	}
 
 	co, err := h.server.GetCoordinator()
@@ -231,6 +244,14 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		needRemoveGCSafePoint = true
 		_ = c.Error(err)
 		return
+	}
+
+	if keyspaceMeta != nil && keyspaceMeta.Id != 0 {
+		schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+		if err = schemaStore.RegisterKeyspace(ctx, h.server.GetKVStorage(), keyspaceMeta.Name, keyspaceMeta.Id); err != nil {
+			_ = c.Error(err)
+			return
+		}
 	}
 
 	log.Info("Create changefeed successfully!",
