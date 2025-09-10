@@ -155,8 +155,9 @@ func GetIntersectSpan(lhs, rhs heartbeatpb.TableSpan) heartbeatpb.TableSpan {
 	}
 
 	return heartbeatpb.TableSpan{
-		StartKey: start,
-		EndKey:   end,
+		StartKey:   start,
+		EndKey:     end,
+		KeyspaceID: lhs.KeyspaceID,
 	}
 }
 
