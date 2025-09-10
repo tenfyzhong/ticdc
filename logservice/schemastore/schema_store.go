@@ -70,7 +70,8 @@ type schemaStore struct {
 	pdClock pdutil.Clock
 
 	ddlJobFetcher         *ddlJobFetcher
-	keyspaceDDLJobFetcher sync.Map
+	keyspaceDDLJobFetcher map[uint32]*ddlJobFetcher
+	fetcherLocker         sync.Locker
 
 	// store unresolved ddl event in memory, it is thread safe
 	unsortedCache *ddlCache
@@ -403,10 +404,13 @@ func (s *schemaStore) RegisterKeyspace(
 		return nil
 	}
 
-	_, ok := s.keyspaceDDLJobFetcher.Load(keyspaceID)
+	s.fetcherLocker.Lock()
+	defer s.fetcherLocker.Unlock()
+
 	// If the keyspace has already been registered
 	// No need to register again
-	if ok {
+	fetcher := s.keyspaceDDLJobFetcher[keyspaceID]
+	if fetcher != nil {
 		return nil
 	}
 
@@ -427,7 +431,7 @@ func (s *schemaStore) RegisterKeyspace(
 	upperBound := s.dataStorage.getUpperBound()
 	ddlJobFetcher.run(upperBound.ResolvedTs)
 
-	s.keyspaceDDLJobFetcher.Store(keyspaceID, ddlJobFetcher)
+	s.keyspaceDDLJobFetcher[keyspaceID] = ddlJobFetcher
 
 	return nil
 }
