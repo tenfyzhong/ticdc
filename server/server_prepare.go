@@ -35,7 +35,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/pdutil"
 	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/tidb/pkg/util/memory"
-	"github.com/tikv/client-go/v2/tikv"
 	pd "github.com/tikv/pd/client"
 	pdopt "github.com/tikv/pd/client/opt"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -130,10 +129,10 @@ func (c *server) prepare(ctx context.Context) error {
 
 	regionCacheRegistry := appctx.NewRegionCacheRegistry()
 	if kerneltype.IsClassic() {
-		regionCacheRegistry.Register(common.DefaultKeyspace, c.pdClient)
+		// For classic cdc, the keyspace is alwasy "default", keyspaceID is always 0
+		regionCacheRegistry.Register(common.DefaultKeyspace, common.DefaultKeyspaceID, c.pdClient)
 	}
 	appctx.SetService(appctx.RegionCacheRegistryKey, regionCacheRegistry)
-	appctx.SetService(appctx.RegionCache, tikv.NewRegionCache(c.pdClient))
 
 	if err = c.initDir(); err != nil {
 		return errors.Trace(err)

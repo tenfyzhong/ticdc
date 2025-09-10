@@ -24,7 +24,8 @@ import (
 
 // RegionCacheRegistry is a factory for RegionCache
 type RegionCacheRegistry struct {
-	regionCacheMap sync.Map
+	keyspaceIDRegionCacheMap   sync.Map
+	keyspaceNameRegionCacheMap sync.Map
 }
 
 func NewRegionCacheRegistry() *RegionCacheRegistry {
@@ -32,22 +33,29 @@ func NewRegionCacheRegistry() *RegionCacheRegistry {
 }
 
 // Get returns regionCache for keyspace
-func (f *RegionCacheRegistry) Get(keyspace string) *tikv.RegionCache {
-	if regionCache, ok := f.regionCacheMap.Load(keyspace); ok {
+func (f *RegionCacheRegistry) Get(keyspaceID uint32) *tikv.RegionCache {
+	if regionCache, ok := f.keyspaceIDRegionCacheMap.Load(keyspaceID); ok {
+		return regionCache.(*tikv.RegionCache)
+	}
+	return nil
+}
+
+func (f *RegionCacheRegistry) GetByName(keyspace string) *tikv.RegionCache {
+	if regionCache, ok := f.keyspaceNameRegionCacheMap.Load(keyspace); ok {
 		return regionCache.(*tikv.RegionCache)
 	}
 	return nil
 }
 
 // Register registers regionCache for keyspace
-// For classic cdc, the keyspace is alwasy "default"
-func (f *RegionCacheRegistry) Register(keyspace string, pdClient pd.Client) error {
+// For classic cdc, the keyspace is alwasy "default", keyspaceID is always 0
+func (f *RegionCacheRegistry) Register(keyspace string, keyspaceID uint32, pdClient pd.Client) error {
+	if f.Get(keyspaceID) != nil {
+		return nil
+	}
+
 	var regionCache *tikv.RegionCache
 	if kerneltype.IsNextGen() {
-		if f.Get(keyspace) != nil {
-			return nil
-		}
-
 		keyspacePdClient, err := tikv.NewCodecPDClientWithKeyspace(tikv.ModeTxn, pdClient, keyspace)
 		if err != nil {
 			return errors.Trace(err)
@@ -56,6 +64,7 @@ func (f *RegionCacheRegistry) Register(keyspace string, pdClient pd.Client) erro
 	} else {
 		regionCache = tikv.NewRegionCache(pdClient)
 	}
-	f.regionCacheMap.Store(keyspace, regionCache)
+	f.keyspaceIDRegionCacheMap.Store(keyspaceID, regionCache)
+	f.keyspaceNameRegionCacheMap.Store(keyspace, regionCache)
 	return nil
 }

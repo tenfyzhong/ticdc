@@ -45,7 +45,8 @@ type regionCountSplitter struct {
 func newRegionCountSplitter(
 	changefeedID common.ChangeFeedID, regionCountPerSpan int, regionThreshold int,
 ) *regionCountSplitter {
-	regionCache := appcontext.GetService[RegionCache](appcontext.RegionCache)
+	regionCacheRegistry := appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
+	regionCache := regionCacheRegistry.GetByName(changefeedID.Keyspace())
 	return &regionCountSplitter{
 		changefeedID:       changefeedID,
 		regionCache:        regionCache,

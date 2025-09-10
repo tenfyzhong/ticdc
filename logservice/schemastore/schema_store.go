@@ -411,7 +411,7 @@ func (s *schemaStore) RegisterKeyspace(
 	}
 
 	regionCacheRegistry := appcontext.GetService[*appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
-	regionCacheRegistry.Register(keyspaceName, s.dataStorage.pdCli)
+	regionCacheRegistry.Register(keyspaceName, keyspaceID, s.dataStorage.pdCli)
 
 	subClient := appcontext.GetService[logpuller.SubscriptionClient](appcontext.SubscriptionClient)
 

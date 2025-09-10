@@ -72,7 +72,8 @@ func NewDefaultSpanSplitChecker(changefeedID common.ChangeFeedID, schedulerCfg *
 	if schedulerCfg == nil {
 		log.Panic("scheduler config is nil, please check the config", zap.String("changefeed", changefeedID.Name()))
 	}
-	regionCache := appcontext.GetService[split.RegionCache](appcontext.RegionCache)
+	regionCacheRegistry := appcontext.GetService[appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
+	regionCache := regionCacheRegistry.GetByName(changefeedID.Keyspace())
 	return &defaultSpanSplitChecker{
 		changefeedID:    changefeedID,
 		allTasks:        make(map[common.DispatcherID]*spanSplitStatus),
