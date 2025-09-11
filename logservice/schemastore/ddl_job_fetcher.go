@@ -277,7 +277,6 @@ func getAllDDLSpan(meta *keyspacepb.KeyspaceMeta) ([]heartbeatpb.TableSpan, erro
 
 	start, end, err := common.GetKeyspaceTableRange(meta, JobTableID)
 	if err != nil {
-		log.Error("get keyspace table range failed", zap.Int64("jobTableID", JobTableID), zap.Any("meta", meta))
 		return nil, err
 	}
 
@@ -287,7 +286,10 @@ func getAllDDLSpan(meta *keyspacepb.KeyspaceMeta) ([]heartbeatpb.TableSpan, erro
 		EndKey:     common.ToComparableKey(end),
 		KeyspaceID: keyspaceID,
 	})
-	start, end = common.GetTableRange(JobHistoryID)
+	start, end, err = common.GetKeyspaceTableRange(meta, JobHistoryID)
+	if err != nil {
+		return nil, err
+	}
 	spans = append(spans, heartbeatpb.TableSpan{
 		TableID:    JobHistoryID,
 		StartKey:   common.ToComparableKey(start),
