@@ -86,7 +86,7 @@ func newDDLJobFetcher(
 }
 
 func (p *ddlJobFetcher) run(startTs uint64) error {
-	spans, err := getAllDDLSpan(p.keyspaceMeta)
+	spans, err := getAllDDLSpan(p.keyspaceMeta.Id)
 	if err != nil {
 		return err
 	}
@@ -267,15 +267,10 @@ const (
 	JobHistoryID = metadef.TiDBDDLHistoryTableID
 )
 
-func getAllDDLSpan(meta *keyspacepb.KeyspaceMeta) ([]heartbeatpb.TableSpan, error) {
+func getAllDDLSpan(keyspaceID uint32) ([]heartbeatpb.TableSpan, error) {
 	spans := make([]heartbeatpb.TableSpan, 0, 2)
 
-	keyspaceID := uint32(0)
-	if meta != nil {
-		keyspaceID = meta.Id
-	}
-
-	start, end, err := common.GetKeyspaceTableRange(meta, JobTableID)
+	start, end, err := common.GetKeyspaceTableRange(keyspaceID, JobTableID)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +281,7 @@ func getAllDDLSpan(meta *keyspacepb.KeyspaceMeta) ([]heartbeatpb.TableSpan, erro
 		EndKey:     common.ToComparableKey(end),
 		KeyspaceID: keyspaceID,
 	})
-	start, end, err = common.GetKeyspaceTableRange(meta, JobHistoryID)
+	start, end, err = common.GetKeyspaceTableRange(keyspaceID, JobHistoryID)
 	if err != nil {
 		return nil, err
 	}

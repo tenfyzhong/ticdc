@@ -37,8 +37,8 @@ const (
 
 // TableIDToComparableSpan converts a TableID to a Span whose
 // StartKey and EndKey are encoded in Comparable format.
-func TableIDToComparableSpan(keyspaceMeta *keyspacepb.KeyspaceMeta, tableID int64) heartbeatpb.TableSpan {
-	startKey, endKey, _ := GetKeyspaceTableRange(keyspaceMeta, tableID)
+func TableIDToComparableSpan(keyspaceID uint32, tableID int64) heartbeatpb.TableSpan {
+	startKey, endKey, _ := GetKeyspaceTableRange(keyspaceID, tableID)
 	return heartbeatpb.TableSpan{
 		TableID:  tableID,
 		StartKey: ToComparableKey(startKey),
@@ -49,7 +49,7 @@ func TableIDToComparableSpan(keyspaceMeta *keyspacepb.KeyspaceMeta, tableID int6
 // TableIDToComparableRange returns a range of a table,
 // start and end are encoded in Comparable format.
 func TableIDToComparableRange(tableID int64) (start, end heartbeatpb.TableSpan) {
-	tableSpan := TableIDToComparableSpan(nil, tableID)
+	tableSpan := TableIDToComparableSpan(0, tableID)
 	start = tableSpan
 	start.EndKey = nil
 	end = tableSpan
@@ -59,7 +59,11 @@ func TableIDToComparableRange(tableID int64) (start, end heartbeatpb.TableSpan) 
 }
 
 func IsCompleteSpan(tableSpan *heartbeatpb.TableSpan) bool {
-	startKey, endKey := GetTableRange(tableSpan.TableID)
+	startKey, endKey, err := GetKeyspaceTableRange(tableSpan.KeyspaceID, tableSpan.TableID)
+	if err != nil {
+		// BUG tenfyzhong 2025-09-11 19:10:56
+		log.Error("IsCompleteSpan GetKeyspaceTableRange failed", zap.Uint32("keyspaceID", tableSpan.KeyspaceID))
+	}
 	if StartCompare(ToComparableKey(startKey), tableSpan.StartKey) == 0 && EndCompare(ToComparableKey(endKey), tableSpan.EndKey) == 0 {
 		return true
 	}
@@ -81,9 +85,9 @@ func HackTableSpan(span heartbeatpb.TableSpan) heartbeatpb.TableSpan {
 	return span
 }
 
-// GetTableRange returns the span to watch for the specified table
+// getTableRange returns the span to watch for the specified table
 // Note that returned keys are not in memcomparable format.
-func GetTableRange(tableID int64) (startKey, endKey []byte) {
+func getTableRange(tableID int64) (startKey, endKey []byte) {
 	tablePrefix := tablecodec.GenTablePrefix(tableID)
 	sep := byte('_')
 	recordMarker := byte('r')
@@ -95,13 +99,20 @@ func GetTableRange(tableID int64) (startKey, endKey []byte) {
 	return start, end
 }
 
-func GetKeyspaceTableRange(meta *keyspacepb.KeyspaceMeta, tableID int64) (startKey, endKey []byte, err error) {
-	startKey, endKey = GetTableRange(tableID)
+func GetKeyspaceTableRange(keyspaceID uint32, tableID int64) (startKey, endKey []byte, err error) {
+	startKey, endKey = getTableRange(tableID)
 
-	// If the meta is nil or the id of the 0, that means we are in the classic mode
+	// If the the keyspaceID is 0, that means we are in the classic mode
 	// fallback to the original table range
-	if meta == nil || meta.Id == DefaultKeyspaceID {
+	if keyspaceID == DefaultKeyspaceID {
 		return startKey, endKey, nil
+	}
+
+	// The tikv.NewCodecV2 method requires a keyspace meta
+	// But it actually use the keyspaceID only
+	// We construct a KeyspaceMeta to make the codec happy
+	meta := &keyspacepb.KeyspaceMeta{
+		Id: keyspaceID,
 	}
 
 	codec, err := tikv.NewCodecV2(tikv.ModeTxn, meta)

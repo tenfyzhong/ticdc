@@ -147,7 +147,7 @@ func (c *Controller) splitTableByRegionCount(tableID int64) error {
 		return nil
 	}
 
-	span := common.TableIDToComparableSpan(c.keyspaceMeta, tableID)
+	span := common.TableIDToComparableSpan(c.keyspaceMeta.Id, tableID)
 	wholeSpan := &heartbeatpb.TableSpan{
 		TableID:  span.TableID,
 		StartKey: span.StartKey,

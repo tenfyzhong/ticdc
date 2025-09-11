@@ -74,7 +74,8 @@ func TestRedoDispatcherHandleEvents(t *testing.T) {
 	tableInfo := dmlEvent.TableInfo
 
 	sink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan := getCompleteTableSpan()
+	tableSpan, err := getCompleteTableSpan(0)
+	require.NoError(t, err)
 	dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 	require.Equal(t, uint64(0), dispatcher.GetCheckpointTs())
 	require.Equal(t, uint64(0), dispatcher.GetResolvedTs())
@@ -512,7 +513,9 @@ func TestRedoDispatcherClose(t *testing.T) {
 
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		dispatcher := newRedoDispatcherForTest(sink, getCompleteTableSpan())
+		tableSpan, err := getCompleteTableSpan(0)
+		require.NoError(t, err)
+		dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 
 		// ===== dml event =====
 		nodeID := node.NewID()
@@ -533,7 +536,9 @@ func TestRedoDispatcherClose(t *testing.T) {
 	// test sink is not normal
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		dispatcher := newRedoDispatcherForTest(sink, getCompleteTableSpan())
+		tableSpan, err := getCompleteTableSpan(0)
+		require.NoError(t, err)
+		dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 
 		// ===== dml event =====
 		nodeID := node.NewID()
@@ -576,7 +581,8 @@ func TestRedoBatchDMLEventsPartialFlush(t *testing.T) {
 	dmlEvent3.Length = 1
 
 	mockSink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan := getCompleteTableSpan()
+	tableSpan, err := getCompleteTableSpan(0)
+	require.NoError(t, err)
 	dispatcher := newRedoDispatcherForTest(mockSink, tableSpan)
 
 	// Create a redoCallback that records when it's called

@@ -94,8 +94,8 @@ var DDLSpanSchemaID int64 = 0
 // DDLSpan is the special span for Table Trigger Event Dispatcher
 var DDLSpan = &heartbeatpb.TableSpan{
 	TableID:  0,
-	StartKey: TableIDToComparableSpan(nil, 0).StartKey,
-	EndKey:   TableIDToComparableSpan(nil, 0).EndKey,
+	StartKey: TableIDToComparableSpan(0, 0).StartKey,
+	EndKey:   TableIDToComparableSpan(0, 0).EndKey,
 }
 
 func LessTableSpan(t1, t2 *heartbeatpb.TableSpan) bool {

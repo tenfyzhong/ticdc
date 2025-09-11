@@ -32,7 +32,7 @@ import (
 
 // GetTableSpanByID returns a mock TableSpan for testing
 func GetTableSpanByID(id common.TableID) *heartbeatpb.TableSpan {
-	totalSpan := common.TableIDToComparableSpan(nil, id)
+	totalSpan := common.TableIDToComparableSpan(0, id)
 	return &heartbeatpb.TableSpan{
 		TableID:  totalSpan.TableID,
 		StartKey: totalSpan.StartKey,

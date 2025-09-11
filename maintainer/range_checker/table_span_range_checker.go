@@ -36,7 +36,7 @@ func NewTableSpanRangeChecker(tables []int64) *TableSpanRangeChecker {
 		covered:    atomic.Bool{},
 	}
 	for _, table := range tables {
-		span := common.TableIDToComparableSpan(nil, table)
+		span := common.TableIDToComparableSpan(0, table)
 		sc.tableSpans[table] = NewTableSpanCoverageChecker(span.StartKey, span.EndKey)
 	}
 	return sc
