@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/ticdc/downstreamadapter/sink"
 	"github.com/pingcap/ticdc/downstreamadapter/syncpoint"
 	"github.com/pingcap/ticdc/heartbeatpb"
@@ -29,18 +30,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getCompleteTableSpanWithTableID(tableID int64) *heartbeatpb.TableSpan {
+func getCompleteTableSpanWithTableID(keyspaceMeta *keyspacepb.KeyspaceMeta, tableID int64) (*heartbeatpb.TableSpan, error) {
 	tableSpan := &heartbeatpb.TableSpan{
 		TableID: tableID,
 	}
-	startKey, endKey := common.GetTableRange(tableSpan.TableID)
+	startKey, endKey, err := common.GetKeyspaceTableRange(keyspaceMeta, tableSpan.TableID)
+	if err != nil {
+		return nil, err
+	}
 	tableSpan.StartKey = common.ToComparableKey(startKey)
 	tableSpan.EndKey = common.ToComparableKey(endKey)
-	return tableSpan
+	return tableSpan, nil
 }
 
-func getCompleteTableSpan() *heartbeatpb.TableSpan {
-	return getCompleteTableSpanWithTableID(1)
+func getCompleteTableSpan(keyspaceMeta *keyspacepb.KeyspaceMeta) (*heartbeatpb.TableSpan, error) {
+	return getCompleteTableSpanWithTableID(keyspaceMeta, 1)
 }
 
 func getUncompleteTableSpan() *heartbeatpb.TableSpan {
@@ -107,7 +111,8 @@ func TestDispatcherHandleEvents(t *testing.T) {
 	tableInfo := dmlEvent.TableInfo
 
 	sink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan := getCompleteTableSpan()
+	tableSpan, err := getCompleteTableSpan(nil)
+	require.NoError(t, err)
 	dispatcher := newDispatcherForTest(sink, tableSpan)
 	require.Equal(t, uint64(0), dispatcher.GetCheckpointTs())
 	require.Equal(t, uint64(0), dispatcher.GetResolvedTs())
@@ -622,7 +627,9 @@ func TestDispatcherClose(t *testing.T) {
 
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		dispatcher := newDispatcherForTest(sink, getCompleteTableSpan())
+		tableSpan, err := getCompleteTableSpan(nil)
+		require.NoError(t, err)
+		dispatcher := newDispatcherForTest(sink, tableSpan)
 
 		// ===== dml event =====
 		nodeID := node.NewID()
@@ -643,7 +650,9 @@ func TestDispatcherClose(t *testing.T) {
 	// test sink is not normal
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		dispatcher := newDispatcherForTest(sink, getCompleteTableSpan())
+		tableSpan, err := getCompleteTableSpan(nil)
+		require.NoError(t, err)
+		dispatcher := newDispatcherForTest(sink, tableSpan)
 
 		// ===== dml event =====
 		nodeID := node.NewID()
@@ -688,7 +697,8 @@ func TestBatchDMLEventsPartialFlush(t *testing.T) {
 	dmlEvent3.Length = 1
 
 	mockSink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan := getCompleteTableSpan()
+	tableSpan, err := getCompleteTableSpan(nil)
+	require.NoError(t, err)
 	dispatcher := newDispatcherForTest(mockSink, tableSpan)
 
 	// Create a callback that records when it's called

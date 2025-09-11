@@ -282,7 +282,7 @@ func runBenchTest(b *testing.B, storage string, useFileBackend bool) {
 	for i := 0; i < numOfTables; i++ {
 		tableID := common.TableID(i)
 		tables = append(tables, tableID)
-		span := common.TableIDToComparableSpan(tableID)
+		span := common.TableIDToComparableSpan(nil, tableID)
 		ts := startTs
 		maxTsMap.ReplaceOrInsert(span, &ts)
 	}
@@ -315,7 +315,7 @@ func runBenchTest(b *testing.B, storage string, useFileBackend bool) {
 					dmlMgr.AddDMLEvent(row)
 				}
 			}
-		}(common.TableIDToComparableSpan(tableID))
+		}(common.TableIDToComparableSpan(nil, tableID))
 	}
 	wg.Wait()
 

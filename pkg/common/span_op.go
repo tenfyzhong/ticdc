@@ -37,8 +37,8 @@ const (
 
 // TableIDToComparableSpan converts a TableID to a Span whose
 // StartKey and EndKey are encoded in Comparable format.
-func TableIDToComparableSpan(tableID int64) heartbeatpb.TableSpan {
-	startKey, endKey := GetTableRange(tableID)
+func TableIDToComparableSpan(keyspaceMeta *keyspacepb.KeyspaceMeta, tableID int64) heartbeatpb.TableSpan {
+	startKey, endKey, _ := GetKeyspaceTableRange(keyspaceMeta, tableID)
 	return heartbeatpb.TableSpan{
 		TableID:  tableID,
 		StartKey: ToComparableKey(startKey),
@@ -49,7 +49,7 @@ func TableIDToComparableSpan(tableID int64) heartbeatpb.TableSpan {
 // TableIDToComparableRange returns a range of a table,
 // start and end are encoded in Comparable format.
 func TableIDToComparableRange(tableID int64) (start, end heartbeatpb.TableSpan) {
-	tableSpan := TableIDToComparableSpan(tableID)
+	tableSpan := TableIDToComparableSpan(nil, tableID)
 	start = tableSpan
 	start.EndKey = nil
 	end = tableSpan
@@ -98,9 +98,9 @@ func GetTableRange(tableID int64) (startKey, endKey []byte) {
 func GetKeyspaceTableRange(meta *keyspacepb.KeyspaceMeta, tableID int64) (startKey, endKey []byte, err error) {
 	startKey, endKey = GetTableRange(tableID)
 
-	// If the meta, that means we are in the classic mode
+	// If the meta is nil or the id of the 0, that means we are in the classic mode
 	// fallback to the original table range
-	if meta == nil {
+	if meta == nil || meta.Id == DefaultKeyspaceID {
 		return startKey, endKey, nil
 	}
 

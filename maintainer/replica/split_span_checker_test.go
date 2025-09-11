@@ -75,7 +75,7 @@ func splitTableSpanIntoMultiple(spanA *heartbeatpb.TableSpan, count int) []*hear
 // createTestSplitSpanReplication creates span replications for testing
 // Simulates already-split spans from a table
 func createTestSplitSpanReplications(cfID common.ChangeFeedID, tableID int64, spansNum int) []*SpanReplication {
-	totalSpan := common.TableIDToComparableSpan(tableID)
+	totalSpan := common.TableIDToComparableSpan(nil, tableID)
 	spans := splitTableSpanIntoMultiple(&totalSpan, spansNum)
 	replicas := make([]*SpanReplication, 0, len(spans))
 	for _, span := range spans {

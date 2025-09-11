@@ -1177,7 +1177,7 @@ func TestBarrierEventWithDispatcherReallocation(t *testing.T) {
 
 	spanController.AddNewTable(commonEvent.Table{SchemaID: schemaID, TableID: tableID}, startTs)
 
-	span := common.TableIDToComparableSpan(tableID)
+	span := common.TableIDToComparableSpan(nil, tableID)
 	startKey := span.StartKey
 	endKey := span.EndKey
 
@@ -1383,7 +1383,7 @@ func TestBarrierEventWithDispatcherScheduling(t *testing.T) {
 	startTs := uint64(9)
 	ddlTs := uint64(10)
 
-	span := common.TableIDToComparableSpan(tableID)
+	span := common.TableIDToComparableSpan(nil, tableID)
 	dispatcherA := replica.NewSpanReplication(cfID, common.NewDispatcherID(), schemaID, &heartbeatpb.TableSpan{
 		TableID:  tableID,
 		StartKey: span.StartKey,

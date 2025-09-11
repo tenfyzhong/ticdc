@@ -29,7 +29,7 @@ import (
 )
 
 func createTestSpanReplication(cfID common.ChangeFeedID, tableID int64) *SpanReplication {
-	totalSpan := common.TableIDToComparableSpan(tableID)
+	totalSpan := common.TableIDToComparableSpan(nil, tableID)
 	return NewSpanReplication(cfID, common.NewDispatcherID(), 0, &totalSpan, 1)
 }
 

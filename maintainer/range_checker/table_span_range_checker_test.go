@@ -54,10 +54,10 @@ func TestTableSpanRangeChecker_IsFullyCovered(t *testing.T) {
 	tables := []int64{0, 1}
 	rc := NewTableSpanRangeChecker(tables)
 
-	span := common.TableIDToComparableSpan(0)
+	span := common.TableIDToComparableSpan(nil, 0)
 	rc.AddSubRange(0, span.StartKey, span.EndKey)
 
-	span = common.TableIDToComparableSpan(1)
+	span = common.TableIDToComparableSpan(nil, 1)
 	rc.AddSubRange(1, span.StartKey, appendNew(span.StartKey, 'a'))
 	rc.AddSubRange(1, appendNew(span.StartKey, 'a'), appendNew(span.StartKey, 'b'))
 	rc.AddSubRange(1, appendNew(span.StartKey, 'b'), span.EndKey)
@@ -68,9 +68,9 @@ func TestTableSpanRangeChecker_IsFullyCovered(t *testing.T) {
 	// Reset and re-add to cover only part of the range
 	rc.Reset()
 	require.False(t, rc.IsFullyCovered())
-	span = common.TableIDToComparableSpan(0)
+	span = common.TableIDToComparableSpan(nil, 0)
 	rc.AddSubRange(0, span.StartKey, span.EndKey)
-	span = common.TableIDToComparableSpan(1)
+	span = common.TableIDToComparableSpan(nil, 1)
 	rc.AddSubRange(1, span.StartKey, span.EndKey)
 	require.True(t, rc.IsFullyCovered())
 }

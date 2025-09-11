@@ -139,7 +139,7 @@ func (c *Controller) AddNewTable(table commonEvent.Table, startTs uint64) {
 			zap.Int64("table", table.TableID))
 		return
 	}
-	span := common.TableIDToComparableSpan(table.TableID)
+	span := common.TableIDToComparableSpan(nil, table.TableID)
 	tableSpan := &heartbeatpb.TableSpan{
 		TableID:  table.TableID,
 		StartKey: span.StartKey,

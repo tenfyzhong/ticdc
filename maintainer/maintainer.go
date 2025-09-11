@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/replica"
@@ -156,6 +157,7 @@ func NewMaintainer(cfID common.ChangeFeedID,
 	taskScheduler threadpool.ThreadPool,
 	checkpointTs uint64,
 	newChangefeed bool,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 ) *Maintainer {
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 	nodeManager := appcontext.GetService[*watcher.NodeManager](watcher.NodeManagerName)
@@ -173,8 +175,15 @@ func NewMaintainer(cfID common.ChangeFeedID,
 		selfNode:          selfNode,
 		eventCh:           chann.NewAutoDrainChann[*Event](),
 		startCheckpointTs: checkpointTs,
-		controller: NewController(cfID, checkpointTs, taskScheduler,
-			cfg.Config, ddlSpan, conf.AddTableBatchSize, time.Duration(conf.CheckBalanceInterval)),
+		controller: NewController(
+			cfID,
+			checkpointTs,
+			taskScheduler,
+			cfg.Config,
+			ddlSpan,
+			conf.AddTableBatchSize,
+			time.Duration(conf.CheckBalanceInterval),
+			keyspaceMeta),
 		mc:            mc,
 		removed:       atomic.NewBool(false),
 		nodeManager:   nodeManager,
@@ -231,13 +240,14 @@ func NewMaintainerForRemove(cfID common.ChangeFeedID,
 	conf *config.SchedulerConfig,
 	selfNode *node.Info,
 	taskScheduler threadpool.ThreadPool,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 ) *Maintainer {
 	unused := &config.ChangeFeedInfo{
 		ChangefeedID: cfID,
 		SinkURI:      "",
 		Config:       config.GetDefaultReplicaConfig(),
 	}
-	m := NewMaintainer(cfID, conf, unused, selfNode, taskScheduler, 1, false)
+	m := NewMaintainer(cfID, conf, unused, selfNode, taskScheduler, 1, false, keyspaceMeta)
 	m.cascadeRemoving.Store(true)
 	return m
 }

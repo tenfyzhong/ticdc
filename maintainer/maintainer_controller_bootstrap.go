@@ -208,7 +208,7 @@ func (c *Controller) processTableSpans(
 	// Add new table if not working
 	if isTableWorking {
 		// Handle existing table spans
-		span := common.TableIDToComparableSpan(table.TableID)
+		span := common.TableIDToComparableSpan(nil, table.TableID)
 		tableSpan := &heartbeatpb.TableSpan{
 			TableID:  table.TableID,
 			StartKey: span.StartKey,
