@@ -24,10 +24,8 @@ import (
 	"time"
 
 	"github.com/pingcap/log"
-	"github.com/pingcap/ticdc/pkg/common"
 	appctx "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
-	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/fsutil"
@@ -128,11 +126,6 @@ func (c *server) prepare(ctx context.Context) error {
 		return errors.Trace(err)
 	}
 
-	regionCacheRegistry := appctx.NewRegionCacheRegistry()
-	if kerneltype.IsClassic() {
-		regionCacheRegistry.Register(common.DefaultKeyspace, c.pdClient)
-	}
-	appctx.SetService(appctx.RegionCacheRegistryKey, regionCacheRegistry)
 	appctx.SetService(appctx.RegionCache, tikv.NewRegionCache(c.pdClient))
 
 	if err = c.initDir(); err != nil {

@@ -37,7 +37,6 @@ const (
 	DefaultPDClock          = "PDClock-0"
 	PDAPIClient             = "PDAPIClient"
 	RegionCache             = "RegionCache"
-	RegionCacheRegistryKey  = "RegionCacheRegistry"
 )
 
 // Put all the global instances here.

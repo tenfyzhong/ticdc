@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/pingcap/errors"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/logservice/logpuller"
@@ -59,14 +60,14 @@ type ddlJobFetcher struct {
 
 	kvStorage kv.Storage
 
-	keyspaceID uint32
+	keyspaceMeta *keyspacepb.KeyspaceMeta
 }
 
 func newDDLJobFetcher(
 	ctx context.Context,
 	subClient logpuller.SubscriptionClient,
 	kvStorage kv.Storage,
-	keyspaceID uint32,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 	cacheDDLEvent func(ddlEvent DDLJobWithCommitTs),
 	advanceResolvedTs func(resolvedTS uint64),
 ) *ddlJobFetcher {
@@ -76,7 +77,7 @@ func newDDLJobFetcher(
 		cacheDDLEvent:     cacheDDLEvent,
 		advanceResolvedTs: advanceResolvedTs,
 		kvStorage:         kvStorage,
-		keyspaceID:        keyspaceID,
+		keyspaceMeta:      keyspaceMeta,
 	}
 	ddlJobFetcher.resolvedTsTracker.resolvedTsItemMap = make(map[logpuller.SubscriptionID]*resolvedTsItem)
 	ddlJobFetcher.resolvedTsTracker.resolvedTsHeap = heap.NewHeap[*resolvedTsItem]()
@@ -84,8 +85,12 @@ func newDDLJobFetcher(
 	return ddlJobFetcher
 }
 
-func (p *ddlJobFetcher) run(startTs uint64) {
-	for _, span := range getAllDDLSpan(p.keyspaceID) {
+func (p *ddlJobFetcher) run(startTs uint64) error {
+	spans, err := getAllDDLSpan(p.keyspaceMeta)
+	if err != nil {
+		return err
+	}
+	for _, span := range spans {
 		subID := p.subClient.AllocSubscriptionID()
 		item := &resolvedTsItem{
 			resolvedTs: 0,
@@ -97,6 +102,7 @@ func (p *ddlJobFetcher) run(startTs uint64) {
 		}
 		p.subClient.Subscribe(subID, span, startTs, p.input, advanceSubSpanResolvedTs, 0, ddlPullerFilterLoop)
 	}
+	return nil
 }
 
 func (p *ddlJobFetcher) tryAdvanceResolvedTs(subID logpuller.SubscriptionID, newResolvedTs uint64) {
@@ -261,9 +267,20 @@ const (
 	JobHistoryID = metadef.TiDBDDLHistoryTableID
 )
 
-func getAllDDLSpan(keyspaceID uint32) []heartbeatpb.TableSpan {
+func getAllDDLSpan(meta *keyspacepb.KeyspaceMeta) ([]heartbeatpb.TableSpan, error) {
 	spans := make([]heartbeatpb.TableSpan, 0, 2)
-	start, end := common.GetTableRange(JobTableID)
+
+	keyspaceID := uint32(0)
+	if meta != nil {
+		keyspaceID = meta.Id
+	}
+
+	start, end, err := common.GetKeyspaceTableRange(meta, JobTableID)
+	if err != nil {
+		log.Error("get keyspace table range failed", zap.Int64("jobTableID", JobTableID), zap.Any("meta", meta))
+		return nil, err
+	}
+
 	spans = append(spans, heartbeatpb.TableSpan{
 		TableID:    JobTableID,
 		StartKey:   common.ToComparableKey(start),
@@ -277,7 +294,7 @@ func getAllDDLSpan(keyspaceID uint32) []heartbeatpb.TableSpan {
 		EndKey:     common.ToComparableKey(end),
 		KeyspaceID: keyspaceID,
 	})
-	return spans
+	return spans, nil
 }
 
 type resolvedTsItem struct {

@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/logservice/logpuller"
 	"github.com/pingcap/ticdc/pkg/common"
@@ -58,7 +59,7 @@ type SchemaStore interface {
 	FetchTableTriggerDDLEvents(tableFilter filter.Filter, start uint64, limit int) ([]commonEvent.DDLEvent, uint64, error)
 
 	// RegisterKeyspace register a keyspace to fetch table ddl
-	RegisterKeyspace(ctx context.Context, kvStorage kv.Storage, keyspaceName string, keyspaceID uint32) error
+	RegisterKeyspace(ctx context.Context, keyspaceMeta *keyspacepb.KeyspaceMeta) error
 }
 
 type DDLEventState struct {
@@ -70,7 +71,8 @@ type schemaStore struct {
 	pdClock pdutil.Clock
 
 	ddlJobFetcher         *ddlJobFetcher
-	keyspaceDDLJobFetcher sync.Map
+	keyspaceDDLJobFetcher map[uint32]*ddlJobFetcher
+	keyspaceFetcherLocker sync.Locker
 
 	// store unresolved ddl event in memory, it is thread safe
 	unsortedCache *ddlCache
@@ -93,6 +95,8 @@ type schemaStore struct {
 	finishedDDLTs uint64
 	// max schemaVersion of all applied ddl events
 	schemaVersion int64
+
+	kvStorage kv.Storage
 }
 
 func New(
@@ -108,17 +112,7 @@ func New(
 		unsortedCache: newDDLCache(),
 		dataStorage:   dataStorage,
 		notifyCh:      make(chan interface{}, 4),
-	}
-
-	if kerneltype.IsClassic() {
-		// For classic mode, we use a fixed keyspace ID 0
-		s.ddlJobFetcher = newDDLJobFetcher(
-			ctx,
-			subClient,
-			kvStorage,
-			0,
-			s.writeDDLEvent,
-			s.advancePendingResolvedTs)
+		kvStorage:     kvStorage,
 	}
 
 	return s
@@ -137,9 +131,9 @@ func (s *schemaStore) initialize(ctx context.Context) {
 	s.pendingResolvedTs.Store(upperBound.ResolvedTs)
 	s.resolvedTs.Store(upperBound.ResolvedTs)
 
-	// ddlJobFetcher is only used in classic mode
-	if s.ddlJobFetcher != nil {
-		s.ddlJobFetcher.run(upperBound.ResolvedTs)
+	// we should fetch ddl at startup for classic mode
+	if kerneltype.IsClassic() {
+		s.RegisterKeyspace(ctx, nil)
 	}
 
 	log.Info("schema store initialized",
@@ -393,41 +387,42 @@ func (s *schemaStore) waitResolvedTs(tableID int64, ts uint64, logInterval time.
 
 // RegisterKeyspace register a keyspace to fetch table ddl
 // Should be called after changefeed creates
+// For classic mode, the keyspace is nil
 func (s *schemaStore) RegisterKeyspace(
 	ctx context.Context,
-	kvStorage kv.Storage,
-	keyspaceName string,
-	keyspaceID uint32,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 ) error {
-	if kerneltype.IsClassic() {
-		return nil
+	s.keyspaceFetcherLocker.Lock()
+	defer s.keyspaceFetcherLocker.Unlock()
+
+	keyspaceID := uint32(0)
+	if keyspaceMeta != nil {
+		keyspaceID = keyspaceMeta.Id
 	}
 
-	_, ok := s.keyspaceDDLJobFetcher.Load(keyspaceID)
 	// If the keyspace has already been registered
 	// No need to register again
-	if ok {
+	if _, ok := s.keyspaceDDLJobFetcher[keyspaceID]; ok {
 		return nil
 	}
 
-	regionCacheRegistry := appcontext.GetService[*appcontext.RegionCacheRegistry](appcontext.RegionCacheRegistryKey)
-	regionCacheRegistry.Register(keyspaceName, s.dataStorage.pdCli)
-
 	subClient := appcontext.GetService[logpuller.SubscriptionClient](appcontext.SubscriptionClient)
-
 	ddlJobFetcher := newDDLJobFetcher(
 		ctx,
 		subClient,
-		kvStorage,
-		keyspaceID,
+		s.kvStorage,
+		keyspaceMeta,
 		s.writeDDLEvent,
 		s.advancePendingResolvedTs,
 	)
 
 	upperBound := s.dataStorage.getUpperBound()
-	ddlJobFetcher.run(upperBound.ResolvedTs)
+	err := ddlJobFetcher.run(upperBound.ResolvedTs)
+	if err != nil {
+		return err
+	}
 
-	s.keyspaceDDLJobFetcher.Store(keyspaceID, ddlJobFetcher)
+	s.keyspaceDDLJobFetcher[keyspaceID] = ddlJobFetcher
 
 	return nil
 }

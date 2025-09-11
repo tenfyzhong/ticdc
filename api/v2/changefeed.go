@@ -248,7 +248,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 
 	if keyspaceMeta != nil && keyspaceMeta.Id != 0 {
 		schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-		if err = schemaStore.RegisterKeyspace(ctx, h.server.GetKVStorage(), keyspaceMeta.Name, keyspaceMeta.Id); err != nil {
+		if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
 			_ = c.Error(err)
 			return
 		}
