@@ -38,7 +38,11 @@ const (
 // TableIDToComparableSpan converts a TableID to a Span whose
 // StartKey and EndKey are encoded in Comparable format.
 func TableIDToComparableSpan(keyspaceID uint32, tableID int64) heartbeatpb.TableSpan {
-	startKey, endKey, _ := GetKeyspaceTableRange(keyspaceID, tableID)
+	startKey, endKey, err := GetKeyspaceTableRange(keyspaceID, tableID)
+	if err != nil {
+		// BUG tenfyzhong 2025-09-12 11:37:41 process err
+		log.Error("GetKeyspaceTableRange failed", zap.Uint32("keyspaceID", keyspaceID), zap.Int64("tableID", tableID))
+	}
 	return heartbeatpb.TableSpan{
 		TableID:  tableID,
 		StartKey: ToComparableKey(startKey),
