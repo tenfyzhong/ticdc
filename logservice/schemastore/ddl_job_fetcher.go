@@ -35,14 +35,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	once         sync.Once
-	ddlTableInfo *event.DDLTableInfo
-	// ddl puller should never filter any DDL jobs even if
-	// the changefeed is in BDR mode, because the DDL jobs should
-	// be filtered before they are sent to the sink
-	ddlPullerFilterLoop = false
-)
+// ddl puller should never filter any DDL jobs even if
+// the changefeed is in BDR mode, because the DDL jobs should
+// be filtered before they are sent to the sink
+var ddlPullerFilterLoop = false
 
 type ddlJobFetcher struct {
 	ctx               context.Context
@@ -61,6 +57,9 @@ type ddlJobFetcher struct {
 	kvStorage kv.Storage
 
 	keyspaceMeta *keyspacepb.KeyspaceMeta
+
+	ddlTableInfo         *event.DDLTableInfo
+	onceInitddlTableInfo sync.Once
 }
 
 func newDDLJobFetcher(
@@ -156,14 +155,14 @@ func (p *ddlJobFetcher) unmarshalDDL(rawKV *common.RawKVEntry) (*model.Job, erro
 		return nil, nil
 	}
 	if !event.IsLegacyFormatJob(rawKV) {
-		once.Do(func() {
-			if err := initDDLTableInfo(p.ctx, p.kvStorage); err != nil {
+		p.onceInitddlTableInfo.Do(func() {
+			if err := p.initDDLTableInfo(p.ctx, p.kvStorage); err != nil {
 				log.Fatal("init ddl table info failed", zap.Error(err))
 			}
 		})
 	}
 
-	return event.ParseDDLJob(rawKV, ddlTableInfo)
+	return event.ParseDDLJob(rawKV, p.ddlTableInfo)
 }
 
 // getSnapshotMeta returns tidb meta information
@@ -172,7 +171,7 @@ func getSnapshotMeta(tiStore kv.Storage, ts uint64) meta.Reader {
 	return meta.NewReader(snapshot)
 }
 
-func initDDLTableInfo(ctx context.Context, kvStorage kv.Storage) error {
+func (p *ddlJobFetcher) initDDLTableInfo(ctx context.Context, kvStorage kv.Storage) error {
 	version, err := kvStorage.CurrentVersion(kv.GlobalTxnScope)
 	if err != nil {
 		return errors.Trace(err)
@@ -205,9 +204,9 @@ func initDDLTableInfo(ctx context.Context, kvStorage kv.Storage) error {
 		return errors.Trace(err)
 	}
 
-	ddlTableInfo = &event.DDLTableInfo{}
-	ddlTableInfo.DDLJobTable = common.WrapTableInfo(db.Name.L, tableInfo)
-	ddlTableInfo.JobMetaColumnIDinJobTable = col.ID
+	p.ddlTableInfo = &event.DDLTableInfo{}
+	p.ddlTableInfo.DDLJobTable = common.WrapTableInfo(db.Name.L, tableInfo)
+	p.ddlTableInfo.JobMetaColumnIDinJobTable = col.ID
 
 	// for tidb_ddl_history
 	historyTableInfo, err := findTableByName(tbls, "tidb_ddl_history")
@@ -220,8 +219,8 @@ func initDDLTableInfo(ctx context.Context, kvStorage kv.Storage) error {
 		return errors.Trace(err)
 	}
 
-	ddlTableInfo.DDLHistoryTable = common.WrapTableInfo(db.Name.L, historyTableInfo)
-	ddlTableInfo.JobMetaColumnIDinHistoryTable = historyTableCol.ID
+	p.ddlTableInfo.DDLHistoryTable = common.WrapTableInfo(db.Name.L, historyTableInfo)
+	p.ddlTableInfo.JobMetaColumnIDinHistoryTable = historyTableCol.ID
 
 	return nil
 }
