@@ -108,11 +108,12 @@ func New(
 ) SchemaStore {
 	dataStorage := newPersistentStorage(ctx, root, pdCli, kvStorage)
 	s := &schemaStore{
-		pdClock:       appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
-		unsortedCache: newDDLCache(),
-		dataStorage:   dataStorage,
-		notifyCh:      make(chan interface{}, 4),
-		kvStorage:     kvStorage,
+		pdClock:               appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
+		unsortedCache:         newDDLCache(),
+		dataStorage:           dataStorage,
+		notifyCh:              make(chan interface{}, 4),
+		kvStorage:             kvStorage,
+		keyspaceDDLJobFetcher: make(map[uint32]*ddlJobFetcher),
 	}
 
 	return s
