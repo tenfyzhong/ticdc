@@ -1167,7 +1167,7 @@ func TestBarrierEventWithDispatcherReallocation(t *testing.T) {
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
 		}, "node1")
-	spanController := span.NewController(cfID, ddlSpan, nil, nil)
+	spanController := span.NewController(cfID, ddlSpan, nil, nil, nil)
 	operatorController := operator.NewOperatorController(cfID, spanController, 1000)
 
 	tableID := int64(1)
