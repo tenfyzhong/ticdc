@@ -72,7 +72,7 @@ type schemaStore struct {
 
 	ddlJobFetcher         *ddlJobFetcher
 	keyspaceDDLJobFetcher map[uint32]*ddlJobFetcher
-	keyspaceFetcherLocker sync.Locker
+	keyspaceFetcherLocker sync.Mutex
 
 	// store unresolved ddl event in memory, it is thread safe
 	unsortedCache *ddlCache
