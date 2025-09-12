@@ -24,7 +24,7 @@ import (
 func TestNewTableSpanRangeChecker(t *testing.T) {
 	// Test if NewTableSpanRangeChecker initializes the object correctly with provided table IDs
 	tables := []int64{1, 2, 3}
-	rc := NewTableSpanRangeChecker(tables)
+	rc := NewTableSpanRangeChecker(0, tables)
 	require.NotNil(t, rc)
 	require.Len(t, rc.tableSpans, 3)
 
@@ -36,7 +36,7 @@ func TestNewTableSpanRangeChecker(t *testing.T) {
 
 func TestTableSpanRangeChecker_AddSubRange(t *testing.T) {
 	// Test the AddSubRange function
-	rc := NewTableSpanRangeChecker([]int64{1})
+	rc := NewTableSpanRangeChecker(0, []int64{1})
 	start := []byte{0x00}
 	end := []byte{0xFF}
 
@@ -52,7 +52,7 @@ func TestTableSpanRangeChecker_AddSubRange(t *testing.T) {
 func TestTableSpanRangeChecker_IsFullyCovered(t *testing.T) {
 	// Test the IsFullyCovered function for TableSpanRangeChecker
 	tables := []int64{0, 1}
-	rc := NewTableSpanRangeChecker(tables)
+	rc := NewTableSpanRangeChecker(0, tables)
 
 	span := common.TableIDToComparableSpan(0, 0)
 	rc.AddSubRange(0, span.StartKey, span.EndKey)
@@ -77,7 +77,7 @@ func TestTableSpanRangeChecker_IsFullyCovered(t *testing.T) {
 
 func TestTableSpanRangeChecker_Reset(t *testing.T) {
 	// Test the Reset function
-	rc := NewTableSpanRangeChecker([]int64{1})
+	rc := NewTableSpanRangeChecker(0, []int64{1})
 	start := []byte{0x00}
 	end := []byte{0xFF}
 

@@ -88,7 +88,7 @@ func NewController(changefeedID common.ChangeFeedID,
 	if cfConfig != nil {
 		schedulerCfg = cfConfig.Scheduler
 	}
-	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg)
+	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg, keyspaceMeta)
 
 	// Create operator controller using spanController
 	oc := operator.NewOperatorController(changefeedID, spanController, batchSize)

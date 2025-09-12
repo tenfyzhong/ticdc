@@ -18,6 +18,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/replica"
@@ -75,6 +76,8 @@ type Controller struct {
 	enableTableAcrossNodes bool
 	ddlDispatcherID        common.DispatcherID
 	enableSplittableCheck  bool
+
+	keyspaceMeta *keyspacepb.KeyspaceMeta
 }
 
 // NewController creates a new span controller
@@ -83,6 +86,7 @@ func NewController(
 	ddlSpan *replica.SpanReplication,
 	splitter *split.Splitter,
 	schedulerCfg *config.ChangefeedSchedulerConfig,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 ) *Controller {
 	c := &Controller{
 		changefeedID:           changefeedID,
@@ -93,6 +97,7 @@ func NewController(
 		ddlDispatcherID:        ddlSpan.ID,
 		enableTableAcrossNodes: schedulerCfg != nil && schedulerCfg.EnableTableAcrossNodes,
 		enableSplittableCheck:  schedulerCfg != nil && schedulerCfg.EnableSplittableCheck,
+		keyspaceMeta:           keyspaceMeta,
 	}
 
 	c.reset(c.ddlSpan)
@@ -139,7 +144,10 @@ func (c *Controller) AddNewTable(table commonEvent.Table, startTs uint64) {
 			zap.Int64("table", table.TableID))
 		return
 	}
-	span := common.TableIDToComparableSpan(0, table.TableID)
+
+	keyspaceID := c.GetkeyspaceID()
+
+	span := common.TableIDToComparableSpan(keyspaceID, table.TableID)
 	tableSpan := &heartbeatpb.TableSpan{
 		TableID:  table.TableID,
 		StartKey: span.StartKey,
@@ -542,4 +550,11 @@ func (c *Controller) GetAbsentForTest(limit int) []*replica.SpanReplication {
 	ret := c.GetAbsent()
 	limit = min(limit, len(ret))
 	return ret[:limit]
+}
+
+func (c Controller) GetkeyspaceID() uint32 {
+	if c.keyspaceMeta == nil {
+		return 0
+	}
+	return c.keyspaceMeta.Id
 }
