@@ -80,8 +80,11 @@ type server struct {
 
 	EtcdClient etcd.CDCEtcdClient
 
-	KVStorage kv.Storage
-	PDClock   pdutil.Clock
+	// TODO tenfyzhong 2025-09-12 21:19:57 remove KVStorage
+	KVStorage     kv.Storage
+	storageLocker sync.RWMutex
+	kvStorageMap  map[string]kv.Storage
+	PDClock       pdutil.Clock
 
 	tcpServer tcpserver.TCPServer
 
@@ -125,10 +128,11 @@ func New(conf *config.ServerConfig, pdEndpoints []string) (tiserver.Server, erro
 	}
 
 	s := &server{
-		pdEndpoints: pdEndpoints,
-		tcpServer:   tcpServer,
-		security:    conf.Security,
-		preServices: make([]common.Closeable, 0),
+		kvStorageMap: make(map[string]kv.Storage),
+		pdEndpoints:  pdEndpoints,
+		tcpServer:    tcpServer,
+		security:     conf.Security,
+		preServices:  make([]common.Closeable, 0),
 	}
 	return s, nil
 }
@@ -489,4 +493,10 @@ func (c *server) GetMaintainerManager() *maintainer.Manager {
 
 func (c *server) GetKVStorage() kv.Storage {
 	return c.KVStorage
+}
+
+func (c *server) GetKeyspaceKVStorage(keyspaceName string) kv.Storage {
+	c.storageLocker.RLock()
+	defer c.storageLocker.Unlock()
+	return c.kvStorageMap[keyspaceName]
 }

@@ -176,6 +176,7 @@ func removeKeyspacePrefix(key []byte) []byte {
 	return key[keyspacePrefixLen:]
 }
 
+// TODO tenfyzhong 2025-09-12 18:41:13 keyspace-based
 // ParseDDLJob parses the job from the raw KV entry.
 func ParseDDLJob(rawKV *common.RawKVEntry, ddlTableInfo *DDLTableInfo) (*model.Job, error) {
 	var v []byte
