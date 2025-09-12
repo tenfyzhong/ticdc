@@ -189,7 +189,17 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
-	ineligibleTables, _, err := getVerifiedTables(ctx, replicaCfg, h.server.GetKVStorage(), cfg.StartTs, scheme, topic, protocol)
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	if keyspaceMeta != nil && keyspaceMeta.Id != 0 {
+		if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
+			_ = c.Error(err)
+			return
+		}
+	}
+
+	kvStorage := schemaStore.GetKVStorage(keyspace)
+
+	ineligibleTables, _, err := getVerifiedTables(ctx, replicaCfg, kvStorage, cfg.StartTs, scheme, topic, protocol)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -244,14 +254,6 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		needRemoveGCSafePoint = true
 		_ = c.Error(err)
 		return
-	}
-
-	if keyspaceMeta != nil && keyspaceMeta.Id != 0 {
-		schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-		if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
-			_ = c.Error(err)
-			return
-		}
 	}
 
 	log.Info("Create changefeed successfully!",
@@ -601,7 +603,9 @@ func (h *OpenAPIV2) ResumeChangefeed(c *gin.Context) {
 func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	changefeedDisplayName := common.NewChangeFeedDisplayName(c.Param(api.APIOpVarChangefeedID), GetKeyspaceValueWithDefault(c))
+	keyspace := GetKeyspaceValueWithDefault(c)
+
+	changefeedDisplayName := common.NewChangeFeedDisplayName(c.Param(api.APIOpVarChangefeedID), keyspace)
 	if err := common.ValidateChangefeedID(changefeedDisplayName.Name); err != nil {
 		_ = c.Error(errors.ErrAPIInvalidParam.GenWithStack("invalid changefeed_id: %s",
 			changefeedDisplayName.Name))
@@ -672,8 +676,11 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
 
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	kvStorage := schemaStore.GetKVStorage(keyspace)
+
 	// use checkpointTs get snapshot from kv storage
-	ineligibleTables, _, err := getVerifiedTables(ctx, oldCfInfo.Config, h.server.GetKVStorage(), status.CheckpointTs, scheme, topic, protocol)
+	ineligibleTables, _, err := getVerifiedTables(ctx, oldCfInfo.Config, kvStorage, status.CheckpointTs, scheme, topic, protocol)
 	if err != nil {
 		_ = c.Error(errors.ErrChangefeedUpdateRefused.GenWithStackByCause(err))
 		return

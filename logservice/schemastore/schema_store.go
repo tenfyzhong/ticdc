@@ -15,6 +15,7 @@ package schemastore
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,10 +26,13 @@ import (
 	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
+	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
+	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/pdutil"
+	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/tidb/pkg/kv"
 	"github.com/tikv/client-go/v2/oracle"
 	pd "github.com/tikv/pd/client"
@@ -60,6 +64,8 @@ type SchemaStore interface {
 
 	// RegisterKeyspace register a keyspace to fetch table ddl
 	RegisterKeyspace(ctx context.Context, keyspaceMeta *keyspacepb.KeyspaceMeta) error
+
+	GetKVStorage(keyspaceName string) kv.Storage
 }
 
 type DDLEventState struct {
@@ -78,7 +84,9 @@ type schemaStore struct {
 	unsortedCache *ddlCache
 
 	// store ddl event and other metadata on disk, it is thread safe
-	dataStorage *persistentStorage
+	dataStorage   *persistentStorage
+	kvStorageMap  map[string]kv.Storage
+	storageLocker sync.RWMutex
 
 	notifyCh chan interface{}
 
@@ -96,7 +104,7 @@ type schemaStore struct {
 	// max schemaVersion of all applied ddl events
 	schemaVersion int64
 
-	kvStorage kv.Storage
+	pdEndpoints []string
 }
 
 func New(
@@ -104,16 +112,18 @@ func New(
 	root string,
 	subClient logpuller.SubscriptionClient,
 	pdCli pd.Client,
-	kvStorage kv.Storage,
+	pdEndpoints []string,
 ) SchemaStore {
-	dataStorage := newPersistentStorage(ctx, root, pdCli, kvStorage)
+	// TODO tenfyzhong 2025-09-12 23:16:46 pass kvStorage to dataStorage
+	dataStorage := newPersistentStorage(ctx, root, pdCli, nil)
 	s := &schemaStore{
 		pdClock:               appcontext.GetService[pdutil.Clock](appcontext.DefaultPDClock),
 		unsortedCache:         newDDLCache(),
 		dataStorage:           dataStorage,
+		kvStorageMap:          make(map[string]kv.Storage),
 		notifyCh:              make(chan interface{}, 4),
-		kvStorage:             kvStorage,
 		keyspaceDDLJobFetcher: make(map[uint32]*ddlJobFetcher),
+		pdEndpoints:           pdEndpoints,
 	}
 
 	return s
@@ -396,9 +406,11 @@ func (s *schemaStore) RegisterKeyspace(
 	s.keyspaceFetcherLocker.Lock()
 	defer s.keyspaceFetcherLocker.Unlock()
 
+	keyspaceName := ""
 	keyspaceID := uint32(0)
 	if keyspaceMeta != nil {
 		keyspaceID = keyspaceMeta.Id
+		keyspaceName = keyspaceMeta.Name
 	}
 
 	// If the keyspace has already been registered
@@ -407,18 +419,22 @@ func (s *schemaStore) RegisterKeyspace(
 		return nil
 	}
 
+	kvStorage, err := s.registerStorage(keyspaceName)
+
 	subClient := appcontext.GetService[logpuller.SubscriptionClient](appcontext.SubscriptionClient)
 	ddlJobFetcher := newDDLJobFetcher(
 		ctx,
 		subClient,
-		s.kvStorage,
+		kvStorage,
 		keyspaceMeta,
 		s.writeDDLEvent,
 		s.advancePendingResolvedTs,
 	)
 
+	// TODO tenfyzhong 2025-09-12 23:17:46 the dataStroage should be
+	// keyspace-based
 	upperBound := s.dataStorage.getUpperBound()
-	err := ddlJobFetcher.run(upperBound.ResolvedTs)
+	err = ddlJobFetcher.run(upperBound.ResolvedTs)
 	if err != nil {
 		return err
 	}
@@ -426,4 +442,29 @@ func (s *schemaStore) RegisterKeyspace(
 	s.keyspaceDDLJobFetcher[keyspaceID] = ddlJobFetcher
 
 	return nil
+}
+
+func (s *schemaStore) registerStorage(keyspaceName string) (kv.Storage, error) {
+	s.storageLocker.Lock()
+	defer s.storageLocker.Unlock()
+	if storage, ok := s.kvStorageMap[keyspaceName]; ok {
+		return storage, nil
+	}
+
+	conf := config.GetGlobalServerConfig()
+	kvStorage, err := upstream.CreateTiStore(strings.Join(s.pdEndpoints, ","), conf.Security, keyspaceName)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	s.kvStorageMap[keyspaceName] = kvStorage
+
+	return kvStorage, nil
+}
+
+func (s *schemaStore) GetKVStorage(keyspaceName string) kv.Storage {
+	s.storageLocker.RLock()
+	stroage := s.kvStorageMap[keyspaceName]
+	s.storageLocker.Unlock()
+	return stroage
 }

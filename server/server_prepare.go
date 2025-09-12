@@ -20,19 +20,16 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"github.com/pingcap/log"
 	appctx "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
-	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/fsutil"
 	"github.com/pingcap/ticdc/pkg/node"
 	"github.com/pingcap/ticdc/pkg/pdutil"
-	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/tidb/pkg/util/memory"
 	"github.com/tikv/client-go/v2/tikv"
 	pd "github.com/tikv/pd/client"
@@ -122,13 +119,6 @@ func (c *server) prepare(ctx context.Context) error {
 			zap.Strings("upstreamEndpoints", c.pdEndpoints))
 	}
 
-	if kerneltype.IsClassic() {
-		err := c.RegisterKeyspace("")
-		if err != nil {
-			return errors.Trace(err)
-		}
-	}
-
 	appctx.SetService(appctx.RegionCache, tikv.NewRegionCache(c.pdClient))
 
 	if err = c.initDir(); err != nil {
@@ -148,25 +138,6 @@ func (c *server) prepare(ctx context.Context) error {
 	// TODO: Get id from disk after restart.
 	c.info = node.NewInfo(conf.AdvertiseAddr, deployPath)
 	c.session = session
-	return nil
-}
-
-func (c *server) RegisterKeyspace(keyspaceName string) error {
-	c.storageLocker.Lock()
-	defer c.storageLocker.Unlock()
-
-	if _, ok := c.kvStorageMap[keyspaceName]; ok {
-		return nil
-	}
-
-	conf := config.GetGlobalServerConfig()
-	kvStorage, err := upstream.CreateTiStore(strings.Join(c.pdEndpoints, ","), conf.Security, keyspaceName)
-	if err != nil {
-		return errors.Trace(err)
-	}
-
-	c.kvStorageMap[keyspaceName] = kvStorage
-
 	return nil
 }
 

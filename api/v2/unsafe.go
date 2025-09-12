@@ -17,7 +17,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/ticdc/logservice/schemastore"
 	"github.com/pingcap/ticdc/logservice/txnutil"
+	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	cerror "github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/txnutil/gc"
 	"github.com/tikv/client-go/v2/tikv"
@@ -47,7 +49,10 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		_ = c.Error(cerror.ErrAPIInvalidParam.Wrap(err))
 		return
 	}
-	kvStorage := h.server.GetKVStorage()
+
+	keyspace := GetKeyspaceValueWithDefault(c)
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	kvStorage := schemaStore.GetKVStorage(keyspace)
 
 	if kvStorage == nil {
 		c.Status(http.StatusServiceUnavailable)

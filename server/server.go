@@ -44,8 +44,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/tcpserver"
 	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/ticdc/server/watcher"
-	"github.com/pingcap/tidb/pkg/kv"
-	"github.com/tikv/client-go/v2/tikv"
 	pd "github.com/tikv/pd/client"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"go.uber.org/zap"
@@ -80,11 +78,7 @@ type server struct {
 
 	EtcdClient etcd.CDCEtcdClient
 
-	// TODO tenfyzhong 2025-09-12 21:19:57 remove KVStorage
-	KVStorage     kv.Storage
-	storageLocker sync.RWMutex
-	kvStorageMap  map[string]kv.Storage
-	PDClock       pdutil.Clock
+	PDClock pdutil.Clock
 
 	tcpServer tcpserver.TCPServer
 
@@ -128,11 +122,10 @@ func New(conf *config.ServerConfig, pdEndpoints []string) (tiserver.Server, erro
 	}
 
 	s := &server{
-		kvStorageMap: make(map[string]kv.Storage),
-		pdEndpoints:  pdEndpoints,
-		tcpServer:    tcpServer,
-		security:     conf.Security,
-		preServices:  make([]common.Closeable, 0),
+		pdEndpoints: pdEndpoints,
+		tcpServer:   tcpServer,
+		security:    conf.Security,
+		preServices: make([]common.Closeable, 0),
 	}
 	return s, nil
 }
@@ -159,9 +152,12 @@ func (c *server) initialize(ctx context.Context) error {
 		&logpuller.SubscriptionClientConfig{
 			RegionRequestWorkerPerStore: 8,
 		}, c.pdClient,
-		txnutil.NewLockerResolver(c.KVStorage.(tikv.Storage)), c.security,
+		// TODO tenfyzhong 2025-09-12 23:35:24 how to pass the kvstorage
+		// paramater?
+		// txnutil.NewLockerResolver(c.KVStorage.(tikv.Storage)), c.security,
+		txnutil.NewLockerResolver(nil), c.security,
 	)
-	schemaStore := schemastore.New(ctx, conf.DataDir, subscriptionClient, c.pdClient, c.KVStorage)
+	schemaStore := schemastore.New(ctx, conf.DataDir, subscriptionClient, c.pdClient, c.pdEndpoints)
 	eventStore := eventstore.New(ctx, conf.DataDir, subscriptionClient)
 	eventService := eventservice.New(eventStore, schemaStore)
 	c.upstreamManager = upstream.NewManager(ctx, upstream.NodeTopologyCfg{
@@ -489,14 +485,4 @@ func (c *server) GetEtcdClient() etcd.CDCEtcdClient {
 
 func (c *server) GetMaintainerManager() *maintainer.Manager {
 	return appctx.GetService[*maintainer.Manager](appctx.MaintainerManager)
-}
-
-func (c *server) GetKVStorage() kv.Storage {
-	return c.KVStorage
-}
-
-func (c *server) GetKeyspaceKVStorage(keyspaceName string) kv.Storage {
-	c.storageLocker.RLock()
-	defer c.storageLocker.Unlock()
-	return c.kvStorageMap[keyspaceName]
 }
