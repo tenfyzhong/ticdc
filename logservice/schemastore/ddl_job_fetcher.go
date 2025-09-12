@@ -38,7 +38,7 @@ import (
 // ddl puller should never filter any DDL jobs even if
 // the changefeed is in BDR mode, because the DDL jobs should
 // be filtered before they are sent to the sink
-var ddlPullerFilterLoop = false
+const ddlPullerFilterLoop = false
 
 type ddlJobFetcher struct {
 	ctx               context.Context
