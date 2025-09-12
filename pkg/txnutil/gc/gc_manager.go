@@ -167,13 +167,13 @@ func (m *gcManager) CheckStaleCheckpointTs(
 
 func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error {
 	var lastUpdatedTime time.Time
-	if lastUpdatedTimeResult, ok := m.keyspaceGCBarrierInfoMap.Load(keyspaceID); ok {
+	if lastUpdatedTimeResult, ok := m.keyspaceLastUpdatedTimeMap.Load(keyspaceID); ok {
 		lastUpdatedTime = lastUpdatedTimeResult.(time.Time)
 	}
 	if time.Since(lastUpdatedTime) < gcSafepointUpdateInterval && !forceUpdate {
 		return nil
 	}
-	m.keyspaceGCBarrierInfoMap.Store(keyspaceID, time.Now())
+	m.keyspaceLastUpdatedTimeMap.Store(keyspaceID, time.Now())
 
 	gcClient := m.pdClient.GetGCStatesClient(keyspaceID)
 	ttl := time.Duration(m.gcTTL) * time.Second
