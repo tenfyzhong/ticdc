@@ -171,9 +171,7 @@ func NewMaintainer(cfID common.ChangeFeedID,
 		cfID,
 		tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
-		// TODO tenfyzhong 2025-09-13 22:55:20 should use a keyspace based span
 		common.KeyspaceDDLSpan(keyspaceID),
-		// common.DDLSpan,
 		&heartbeatpb.TableSpanStatus{
 			ID:              tableTriggerEventDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
