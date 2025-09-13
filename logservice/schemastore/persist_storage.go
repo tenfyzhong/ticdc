@@ -160,7 +160,7 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 		gcState, err := gc.GetGCState(ctx, gcClient)
 		if err == nil {
 			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
-			gcSafePoint = gcState.GCSafePoint
+			gcSafePoint = gcState.TxnSafePoint
 			break
 		}
 
@@ -556,7 +556,7 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 				continue
 			}
 			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
-			p.doGc(gcState.GCSafePoint)
+			p.doGc(gcState.TxnSafePoint)
 		}
 	}
 }
