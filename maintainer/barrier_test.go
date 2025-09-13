@@ -1167,7 +1167,7 @@ func TestBarrierEventWithDispatcherReallocation(t *testing.T) {
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
 		}, "node1")
-	spanController := span.NewController(cfID, ddlSpan, nil, nil)
+	spanController := span.NewController(cfID, ddlSpan, nil, nil, nil)
 	operatorController := operator.NewOperatorController(cfID, spanController, 1000)
 
 	tableID := int64(1)
@@ -1177,7 +1177,7 @@ func TestBarrierEventWithDispatcherReallocation(t *testing.T) {
 
 	spanController.AddNewTable(commonEvent.Table{SchemaID: schemaID, TableID: tableID}, startTs)
 
-	span := common.TableIDToComparableSpan(tableID)
+	span := common.TableIDToComparableSpan(0, tableID)
 	startKey := span.StartKey
 	endKey := span.EndKey
 
@@ -1383,7 +1383,7 @@ func TestBarrierEventWithDispatcherScheduling(t *testing.T) {
 	startTs := uint64(9)
 	ddlTs := uint64(10)
 
-	span := common.TableIDToComparableSpan(tableID)
+	span := common.TableIDToComparableSpan(0, tableID)
 	dispatcherA := replica.NewSpanReplication(cfID, common.NewDispatcherID(), schemaID, &heartbeatpb.TableSpan{
 		TableID:  tableID,
 		StartKey: span.StartKey,

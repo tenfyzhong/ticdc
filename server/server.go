@@ -44,8 +44,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/tcpserver"
 	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/ticdc/server/watcher"
-	"github.com/pingcap/tidb/pkg/kv"
-	"github.com/tikv/client-go/v2/tikv"
 	pd "github.com/tikv/pd/client"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"go.uber.org/zap"
@@ -80,8 +78,7 @@ type server struct {
 
 	EtcdClient etcd.CDCEtcdClient
 
-	KVStorage kv.Storage
-	PDClock   pdutil.Clock
+	PDClock pdutil.Clock
 
 	tcpServer tcpserver.TCPServer
 
@@ -151,13 +148,14 @@ func (c *server) initialize(ctx context.Context) error {
 		appctx.GetService[messaging.MessageCenter](appctx.MessageCenter).OnNodeChanges)
 
 	conf := config.GetGlobalServerConfig()
+	schemaStore := schemastore.New(ctx, conf.DataDir, c.pdClient, c.pdEndpoints)
 	subscriptionClient := logpuller.NewSubscriptionClient(
 		&logpuller.SubscriptionClientConfig{
 			RegionRequestWorkerPerStore: 8,
 		}, c.pdClient,
-		txnutil.NewLockerResolver(c.KVStorage.(tikv.Storage)), c.security,
+		txnutil.NewLockerResolver(schemaStore),
+		c.security,
 	)
-	schemaStore := schemastore.New(ctx, conf.DataDir, subscriptionClient, c.pdClient, c.KVStorage)
 	eventStore := eventstore.New(ctx, conf.DataDir, subscriptionClient)
 	eventService := eventservice.New(eventStore, schemaStore)
 	c.upstreamManager = upstream.NewManager(ctx, upstream.NodeTopologyCfg{
@@ -485,8 +483,4 @@ func (c *server) GetEtcdClient() etcd.CDCEtcdClient {
 
 func (c *server) GetMaintainerManager() *maintainer.Manager {
 	return appctx.GetService[*maintainer.Manager](appctx.MaintainerManager)
-}
-
-func (c *server) GetKVStorage() kv.Storage {
-	return c.KVStorage
 }

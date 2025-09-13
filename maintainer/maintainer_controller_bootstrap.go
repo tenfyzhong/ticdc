@@ -208,11 +208,16 @@ func (c *Controller) processTableSpans(
 	// Add new table if not working
 	if isTableWorking {
 		// Handle existing table spans
-		span := common.TableIDToComparableSpan(table.TableID)
+		keyspaceID := uint32(0)
+		if c.keyspaceMeta != nil {
+			keyspaceID = c.keyspaceMeta.Id
+		}
+		span := common.TableIDToComparableSpan(keyspaceID, table.TableID)
 		tableSpan := &heartbeatpb.TableSpan{
-			TableID:  table.TableID,
-			StartKey: span.StartKey,
-			EndKey:   span.EndKey,
+			TableID:    table.TableID,
+			StartKey:   span.StartKey,
+			EndKey:     span.EndKey,
+			KeyspaceID: keyspaceID,
 		}
 		log.Info("table already working in other node",
 			zap.Stringer("changefeed", c.changefeedID),
@@ -306,8 +311,13 @@ func (c *Controller) loadTables(startTs uint64) ([]commonEvent.Table, error) {
 		return nil, errors.Cause(err)
 	}
 
+	keyspaceID := uint32(0)
+	if c.keyspaceMeta != nil {
+		keyspaceID = c.keyspaceMeta.Id
+	}
+
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	tables, err := schemaStore.GetAllPhysicalTables(startTs, f)
+	tables, err := schemaStore.GetAllPhysicalTables(keyspaceID, startTs, f)
 	return tables, err
 }
 

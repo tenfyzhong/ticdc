@@ -17,10 +17,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/ticdc/logservice/schemastore"
 	"github.com/pingcap/ticdc/logservice/txnutil"
+	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	cerror "github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/txnutil/gc"
-	"github.com/tikv/client-go/v2/tikv"
 )
 
 // CDCMetaData returns all etcd key values used by cdc
@@ -47,15 +48,26 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		_ = c.Error(cerror.ErrAPIInvalidParam.Wrap(err))
 		return
 	}
-	kvStorage := h.server.GetKVStorage()
+
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 
 	if kvStorage == nil {
 		c.Status(http.StatusServiceUnavailable)
 		return
 	}
 
-	txnResolver := txnutil.NewLockerResolver(kvStorage.(tikv.Storage))
-	if err := txnResolver.Resolve(c, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
+	txnResolver := txnutil.NewLockerResolver(schemaStore)
+	if err := txnResolver.Resolve(c, keyspaceMeta.Id, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
 		_ = c.Error(err)
 		return
 	}

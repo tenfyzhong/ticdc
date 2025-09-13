@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/eventpb"
 	"github.com/pingcap/ticdc/heartbeatpb"
@@ -492,6 +493,10 @@ func (m *mockSchemaStore) FetchTableDDLEvents(dispatcherID common.DispatcherID, 
 
 func (m *mockSchemaStore) FetchTableTriggerDDLEvents(tableFilter filter.Filter, start uint64, limit int) ([]commonEvent.DDLEvent, uint64, error) {
 	return nil, 0, nil
+}
+
+func (m *mockSchemaStore) RegisterKeyspace(ctx context.Context, keyspaceMeta *keyspacepb.KeyspaceMeta) error {
+	return nil
 }
 
 type mockSpanStats struct {

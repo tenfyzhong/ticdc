@@ -17,6 +17,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/operator"
@@ -59,6 +60,8 @@ type Controller struct {
 
 	enableTableAcrossNodes bool
 	batchSize              int
+
+	keyspaceMeta *keyspacepb.KeyspaceMeta
 }
 
 func NewController(changefeedID common.ChangeFeedID,
@@ -67,6 +70,7 @@ func NewController(changefeedID common.ChangeFeedID,
 	cfConfig *config.ReplicaConfig,
 	ddlSpan *replica.SpanReplication,
 	batchSize int, balanceInterval time.Duration,
+	keyspaceMeta *keyspacepb.KeyspaceMeta,
 ) *Controller {
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 
@@ -84,7 +88,7 @@ func NewController(changefeedID common.ChangeFeedID,
 	if cfConfig != nil {
 		schedulerCfg = cfConfig.Scheduler
 	}
-	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg)
+	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg, keyspaceMeta)
 
 	// Create operator controller using spanController
 	oc := operator.NewOperatorController(changefeedID, spanController, batchSize)
@@ -107,6 +111,7 @@ func NewController(changefeedID common.ChangeFeedID,
 		enableTableAcrossNodes: enableTableAcrossNodes,
 		batchSize:              batchSize,
 		splitter:               splitter,
+		keyspaceMeta:           keyspaceMeta,
 	}
 }
 

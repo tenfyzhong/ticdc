@@ -94,6 +94,9 @@ const (
 	APIOpVarTiCDCUser = "user"
 	// APIOpVarTiCDCPassword is the key of ticdc password in HTTP API.
 	APIOpVarTiCDCPassword = "password"
+
+	// CtxKeyspaceMeta is the key of keyspace meta in context
+	CtxKeyspaceMeta = "keyspace-meta"
 )
 
 // IsHTTPBadRequestError check if a error is a http bad request error

@@ -33,6 +33,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/api"
 	"github.com/pingcap/ticdc/pkg/apperror"
 	"github.com/pingcap/ticdc/pkg/common"
+	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
@@ -97,6 +98,12 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	if err := common.ValidateKeyspace(changefeedID.Keyspace()); err != nil {
 		_ = c.Error(errors.ErrAPIInvalidParam.GenWithStack(
 			"invalid keyspace: %s", cfg.ID))
+		return
+	}
+
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 
@@ -176,7 +183,19 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
-	ineligibleTables, _, err := getVerifiedTables(ctx, replicaCfg, h.server.GetKVStorage(), cfg.StartTs, scheme, topic, protocol)
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	ineligibleTables, _, err := getVerifiedTables(ctx, replicaCfg, kvStorage, cfg.StartTs, scheme, topic, protocol)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -580,7 +599,9 @@ func (h *OpenAPIV2) ResumeChangefeed(c *gin.Context) {
 func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	changefeedDisplayName := common.NewChangeFeedDisplayName(c.Param(api.APIOpVarChangefeedID), GetKeyspaceValueWithDefault(c))
+	keyspace := GetKeyspaceValueWithDefault(c)
+
+	changefeedDisplayName := common.NewChangeFeedDisplayName(c.Param(api.APIOpVarChangefeedID), keyspace)
 	if err := common.ValidateChangefeedID(changefeedDisplayName.Name); err != nil {
 		_ = c.Error(errors.ErrAPIInvalidParam.GenWithStack("invalid changefeed_id: %s",
 			changefeedDisplayName.Name))
@@ -651,8 +672,21 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
 
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
 	// use checkpointTs get snapshot from kv storage
-	ineligibleTables, _, err := getVerifiedTables(ctx, oldCfInfo.Config, h.server.GetKVStorage(), status.CheckpointTs, scheme, topic, protocol)
+	ineligibleTables, _, err := getVerifiedTables(ctx, oldCfInfo.Config, kvStorage, status.CheckpointTs, scheme, topic, protocol)
 	if err != nil {
 		_ = c.Error(errors.ErrChangefeedUpdateRefused.GenWithStackByCause(err))
 		return
