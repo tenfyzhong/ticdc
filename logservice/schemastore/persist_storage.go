@@ -556,7 +556,7 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 				continue
 			}
 			// TODO tenfyzhong 2025-09-13 18:02:02 should use TxnSafePoint ?
-			p.doGc(gcState.GCSafePoint)
+			p.doGc(gcState.TxnSafePoint)
 		}
 	}
 }
