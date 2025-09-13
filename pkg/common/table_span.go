@@ -98,6 +98,15 @@ var DDLSpan = &heartbeatpb.TableSpan{
 	EndKey:   TableIDToComparableSpan(0, 0).EndKey,
 }
 
+// KeyspaceDDLSpan is the a special keyspace span for Table Trigger Event Dispatcher
+func KeyspaceDDLSpan(keyspaceID uint32) *heartbeatpb.TableSpan {
+	return &heartbeatpb.TableSpan{
+		TableID:  0,
+		StartKey: TableIDToComparableSpan(keyspaceID, 0).StartKey,
+		EndKey:   TableIDToComparableSpan(keyspaceID, 0).EndKey,
+	}
+}
+
 func LessTableSpan(t1, t2 *heartbeatpb.TableSpan) bool {
 	return t1.Less(t2)
 }

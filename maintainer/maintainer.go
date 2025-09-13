@@ -162,13 +162,21 @@ func NewMaintainer(cfID common.ChangeFeedID,
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 	nodeManager := appcontext.GetService[*watcher.NodeManager](watcher.NodeManagerName)
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
+	keyspaceID := uint32(0)
+	if keyspaceMeta != nil {
+		keyspaceID = keyspaceMeta.Id
+	}
+	ddlSpan := replica.NewWorkingSpanReplication(
+		cfID,
+		tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(keyspaceID),
+		&heartbeatpb.TableSpanStatus{
 			ID:              tableTriggerEventDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    checkpointTs,
-		}, selfNode.ID)
+		},
+		selfNode.ID)
 
 	m := &Maintainer{
 		id:                cfID,
