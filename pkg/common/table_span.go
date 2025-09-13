@@ -93,9 +93,10 @@ var DDLSpanSchemaID int64 = 0
 
 // DDLSpan is the special span for Table Trigger Event Dispatcher
 var DDLSpan = &heartbeatpb.TableSpan{
-	TableID:  0,
-	StartKey: TableIDToComparableSpan(0, 0).StartKey,
-	EndKey:   TableIDToComparableSpan(0, 0).EndKey,
+	TableID:    0,
+	StartKey:   TableIDToComparableSpan(0, 0).StartKey,
+	EndKey:     TableIDToComparableSpan(0, 0).EndKey,
+	KeyspaceID: 0,
 }
 
 // KeyspaceDDLSpan is the a special keyspace span for Table Trigger Event Dispatcher
