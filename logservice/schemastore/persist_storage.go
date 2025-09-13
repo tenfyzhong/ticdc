@@ -156,7 +156,7 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 	for {
 		var err error
 		gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-		gcSafePoint, err = gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 0)
+		gcSafePoint, err = gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 24*time.Hour)
 		if err == nil {
 			break
 		}
@@ -546,7 +546,7 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 			return nil
 		case <-ticker.C:
 			gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-			gcSafePoint, err := gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 0)
+			gcSafePoint, err := gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 24*time.Hour)
 			if err != nil {
 				log.Warn("get ts failed", zap.Error(err))
 				continue
