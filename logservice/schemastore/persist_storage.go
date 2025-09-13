@@ -161,7 +161,8 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 		if err == nil {
 			break
 		}
-		gcSafePoint = gcState.GCSafePoint
+		log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
+		gcSafePoint = gcState.TxnSafePoint
 
 		log.Warn("get ts failed, will retry in 1s", zap.Error(err))
 		select {
@@ -208,11 +209,11 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 		}
 	}
 	if !isDataReusable {
-		p.initializeFromKVStorage(dbPath, p.kvStorage, gcSafePoint)
+		p.initializeFromKVStorage(dbPath, gcSafePoint)
 	}
 }
 
-func (p *persistentStorage) initializeFromKVStorage(dbPath string, storage kv.Storage, gcTs uint64) {
+func (p *persistentStorage) initializeFromKVStorage(dbPath string, gcTs uint64) {
 	now := time.Now()
 	if err := os.RemoveAll(dbPath); err != nil {
 		log.Fatal("fail to remove path in initializeFromKVStorage")
@@ -223,7 +224,7 @@ func (p *persistentStorage) initializeFromKVStorage(dbPath string, storage kv.St
 		zap.Uint64("snapTs", gcTs))
 
 	var err error
-	if p.databaseMap, p.tableMap, p.partitionMap, err = persistSchemaSnapshot(p.db, storage, gcTs, true); err != nil {
+	if p.databaseMap, p.tableMap, p.partitionMap, err = persistSchemaSnapshot(p.db, p.kvStorage, gcTs, true); err != nil {
 		// TODO: retry
 		log.Fatal("fail to initialize from kv snapshot")
 	}
@@ -554,6 +555,7 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 				log.Warn("get ts failed", zap.Error(err))
 				continue
 			}
+			// TODO tenfyzhong 2025-09-13 18:02:02 should use TxnSafePoint ?
 			p.doGc(gcState.GCSafePoint)
 		}
 	}
