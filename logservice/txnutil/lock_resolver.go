@@ -21,6 +21,7 @@ import (
 	"github.com/pingcap/errors"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
 	"github.com/pingcap/log"
+	"github.com/pingcap/tidb/pkg/kv"
 	tikverr "github.com/tikv/client-go/v2/error"
 	"github.com/tikv/client-go/v2/tikv"
 	"github.com/tikv/client-go/v2/tikvrpc"
@@ -34,7 +35,7 @@ type LockResolver interface {
 }
 
 type KVStorageGetter interface {
-	GetKVStorage(keyspaceID uint32) (tikv.Storage, error)
+	GetKVStorage(keyspaceID uint32) (kv.Storage, error)
 }
 
 type resolver struct {
@@ -77,10 +78,11 @@ func (r *resolver) Resolve(ctx context.Context, keyspaceID uint32, regionID uint
 		Limit:      scanLockLimit,
 	})
 
-	kvStorage, err := r.kvStorageGetter.GetKVStorage(keyspaceID)
+	storage, err := r.kvStorageGetter.GetKVStorage(keyspaceID)
 	if err != nil {
 		return err
 	}
+	kvStorage := storage.(tikv.Storage)
 
 	bo := tikv.NewGcResolveLockMaxBackoffer(ctx)
 	var loc *tikv.KeyLocation

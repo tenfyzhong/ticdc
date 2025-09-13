@@ -66,7 +66,7 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		return
 	}
 
-	txnResolver := txnutil.NewLockerResolver(schemaStore.(txnutil.KVStorageGetter))
+	txnResolver := txnutil.NewLockerResolver(schemaStore)
 	if err := txnResolver.Resolve(c, keyspaceMeta.Id, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
 		_ = c.Error(err)
 		return

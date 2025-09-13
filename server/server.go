@@ -153,7 +153,7 @@ func (c *server) initialize(ctx context.Context) error {
 		&logpuller.SubscriptionClientConfig{
 			RegionRequestWorkerPerStore: 8,
 		}, c.pdClient,
-		txnutil.NewLockerResolver(schemaStore.(txnutil.KVStorageGetter)),
+		txnutil.NewLockerResolver(schemaStore),
 		c.security,
 	)
 	eventStore := eventstore.New(ctx, conf.DataDir, subscriptionClient)
