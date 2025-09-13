@@ -162,15 +162,17 @@ func NewMaintainer(cfID common.ChangeFeedID,
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 	nodeManager := appcontext.GetService[*watcher.NodeManager](watcher.NodeManagerName)
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
-	keyspaceID := uint32(0)
-	if keyspaceMeta != nil {
-		keyspaceID = keyspaceMeta.Id
-	}
+	// keyspaceID := uint32(0)
+	// if keyspaceMeta != nil {
+	// 	keyspaceID = keyspaceMeta.Id
+	// }
 	ddlSpan := replica.NewWorkingSpanReplication(
 		cfID,
 		tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
-		common.KeyspaceDDLSpan(keyspaceID),
+		// TODO tenfyzhong 2025-09-13 22:55:20 should use a keyspace based span
+		// common.KeyspaceDDLSpan(keyspaceID),
+		common.DDLSpan,
 		&heartbeatpb.TableSpanStatus{
 			ID:              tableTriggerEventDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
