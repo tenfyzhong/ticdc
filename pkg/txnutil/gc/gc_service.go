@@ -146,3 +146,7 @@ func SetGCBarrier(ctx context.Context, gcCli gc.GCStatesClient, serviceID string
 		retry.WithIsRetryableErr(errors.IsRetryableError))
 	return barrierTS, err
 }
+
+func GetGCState(ctx context.Context, gcCli gc.GCStatesClient) (gc.GCState, error) {
+	return gcCli.GetGCState(ctx)
+}

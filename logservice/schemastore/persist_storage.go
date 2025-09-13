@@ -155,11 +155,13 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 	var gcSafePoint uint64
 	for {
 		var err error
+		// TODO tenfyzhong 2025-09-13 17:18:40 compatible with classic mode
 		gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-		gcSafePoint, err = gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 24*time.Hour)
+		gcState, err := gc.GetGCState(ctx, gcClient)
 		if err == nil {
 			break
 		}
+		gcSafePoint = gcState.GCSafePoint
 
 		log.Warn("get ts failed, will retry in 1s", zap.Error(err))
 		select {
@@ -545,13 +547,14 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
+			// TODO tenfyzhong 2025-09-13 17:18:40 compatible with classic mode
 			gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-			gcSafePoint, err := gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 24*time.Hour)
+			gcState, err := gc.GetGCState(ctx, gcClient)
 			if err != nil {
 				log.Warn("get ts failed", zap.Error(err))
 				continue
 			}
-			p.doGc(gcSafePoint)
+			p.doGc(gcState.GCSafePoint)
 		}
 	}
 }
