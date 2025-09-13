@@ -477,6 +477,11 @@ func (s *schemaStore) FetchTableTriggerDDLEvents(keyspaceID uint32, tableFilter 
 		log.Panic("limit cannot be 0")
 	}
 
+	// HACK tenfyzhong 2025-09-13 20:51:37
+	if keyspaceID == 0 {
+		keyspaceID = 1
+	}
+
 	schemaStore, err := s.getKeyspaceSchemaStore(keyspaceID)
 	if err != nil {
 		return nil, 0, err
