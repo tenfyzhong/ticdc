@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -49,7 +48,7 @@ const dataDir = "schema_store"
 type persistentStorage struct {
 	rootDir string
 
-	keyspaceName string
+	keyspaceID uint32
 
 	pdCli pd.Client
 
@@ -131,13 +130,13 @@ func openDB(dbPath string) *pebble.DB {
 
 func newPersistentStorage(
 	root string,
-	keyspaceName string,
+	keyspaceID uint32,
 	pdCli pd.Client,
 	storage kv.Storage,
 ) *persistentStorage {
 	dataStorage := &persistentStorage{
 		rootDir:                root,
-		keyspaceName:           keyspaceName,
+		keyspaceID:             keyspaceID,
 		pdCli:                  pdCli,
 		kvStorage:              storage,
 		tableMap:               make(map[int64]*BasicTableInfo),
@@ -149,10 +148,6 @@ func newPersistentStorage(
 		tableRegisteredCount:   make(map[int64]int),
 	}
 
-	if dataStorage.keyspaceName == "" {
-		dataStorage.keyspaceName = common.DefaultKeyspace
-	}
-
 	return dataStorage
 }
 
@@ -160,8 +155,8 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 	var gcSafePoint uint64
 	for {
 		var err error
-		// TODO tenfyzhong 2025-09-13 00:06:10 use gc barrier
-		gcSafePoint, err = gc.SetServiceGCSafepoint(ctx, p.pdCli, "cdc-new-store", 0, 0)
+		gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
+		gcSafePoint, err = gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 0)
 		if err == nil {
 			break
 		}
@@ -174,8 +169,7 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 		}
 	}
 
-	paths := []string{p.rootDir, dataDir, p.keyspaceName}
-	dbPath := path.Join(paths...)
+	dbPath := fmt.Sprintf("%s/%s/%d", p.rootDir, dataDir, p.keyspaceID)
 
 	// FIXME: currently we don't try to reuse data at restart, when we need, just remove the following line
 	if err := os.RemoveAll(dbPath); err != nil {
@@ -551,8 +545,8 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			// TODO tenfyzhong 2025-09-12 23:57:23 should use gc barrier
-			gcSafePoint, err := gc.SetServiceGCSafepoint(ctx, p.pdCli, "cdc-new-store", 0, 0)
+			gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
+			gcSafePoint, err := gc.SetGCBarrier(ctx, gcClient, "cdc-new-store", 0, 0)
 			if err != nil {
 				log.Warn("get ts failed", zap.Error(err))
 				continue

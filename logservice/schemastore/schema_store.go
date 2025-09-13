@@ -531,7 +531,7 @@ func (s *schemaStore) RegisterKeyspace(
 	}
 
 	kvStorage, err := s.createStorage(keyspaceName)
-	dataStorage := newPersistentStorage(s.root, keyspaceName, s.pdCli, kvStorage)
+	dataStorage := newPersistentStorage(s.root, keyspaceID, s.pdCli, kvStorage)
 	dataStorage.initialize(ctx)
 	schemaStore := &keyspaceSchemaStore{
 		pdClock:       s.pdClock,
