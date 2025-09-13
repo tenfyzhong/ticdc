@@ -303,7 +303,7 @@ func (c *eventBroker) tickTableTriggerDispatchers(ctx context.Context) error {
 				// TODO: maybe limit 1 is enough.
 				ddlEvents, endTs, err := c.schemaStore.FetchTableTriggerDDLEvents(stat.info.GetTableSpan().KeyspaceID, stat.filter, startTs, 100)
 				if err != nil {
-					log.Error("table trigger ddl events fetch failed", zap.Stringer("dispatcherID", stat.id), zap.Error(err))
+					log.Error("table trigger ddl events fetch failed", zap.Uint32("keyspaceID", stat.info.GetTableSpan().KeyspaceID), zap.Stringer("dispatcherID", stat.id), zap.Error(err))
 					return true
 				}
 				for _, e := range ddlEvents {
