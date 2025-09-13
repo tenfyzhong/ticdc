@@ -92,20 +92,12 @@ func IsTableSpanConsecutive(prev *heartbeatpb.TableSpan, current *heartbeatpb.Ta
 var DDLSpanSchemaID int64 = 0
 
 // DDLSpan is the special span for Table Trigger Event Dispatcher
-var DDLSpan = &heartbeatpb.TableSpan{
-	TableID:    0,
-	StartKey:   TableIDToComparableSpan(0, 0).StartKey,
-	EndKey:     TableIDToComparableSpan(0, 0).EndKey,
-	KeyspaceID: 0,
-}
+var DDLSpan = KeyspaceDDLSpan(0)
 
 // KeyspaceDDLSpan is the a special keyspace span for Table Trigger Event Dispatcher
 func KeyspaceDDLSpan(keyspaceID uint32) *heartbeatpb.TableSpan {
-	return &heartbeatpb.TableSpan{
-		TableID:  0,
-		StartKey: TableIDToComparableSpan(keyspaceID, 0).StartKey,
-		EndKey:   TableIDToComparableSpan(keyspaceID, 0).EndKey,
-	}
+	span := TableIDToComparableSpan(keyspaceID, 0)
+	return &span
 }
 
 func LessTableSpan(t1, t2 *heartbeatpb.TableSpan) bool {
