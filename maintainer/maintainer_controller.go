@@ -74,11 +74,16 @@ func NewController(changefeedID common.ChangeFeedID,
 ) *Controller {
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 
+	keyspaceID := uint32(0)
+	if keyspaceMeta != nil {
+		keyspaceID = keyspaceMeta.Id
+	}
+
 	enableTableAcrossNodes := false
 	var splitter *split.Splitter
 	if cfConfig != nil && cfConfig.Scheduler.EnableTableAcrossNodes {
 		enableTableAcrossNodes = true
-		splitter = split.NewSplitter(changefeedID, cfConfig.Scheduler)
+		splitter = split.NewSplitter(keyspaceID, changefeedID, cfConfig.Scheduler)
 	}
 
 	nodeManager := appcontext.GetService[*watcher.NodeManager](watcher.NodeManagerName)
@@ -167,4 +172,11 @@ func (c *Controller) Stop() {
 	for _, handler := range c.taskHandles {
 		handler.Cancel()
 	}
+}
+
+func (c *Controller) GetKeyspaceID() uint32 {
+	if c.keyspaceMeta == nil {
+		return 0
+	}
+	return c.keyspaceMeta.Id
 }

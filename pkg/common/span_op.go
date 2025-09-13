@@ -44,10 +44,9 @@ func TableIDToComparableSpan(keyspaceID uint32, tableID int64) heartbeatpb.Table
 		log.Error("GetKeyspaceTableRange failed", zap.Uint32("keyspaceID", keyspaceID), zap.Int64("tableID", tableID))
 	}
 	return heartbeatpb.TableSpan{
-		TableID:    tableID,
-		StartKey:   ToComparableKey(startKey),
-		EndKey:     ToComparableKey(endKey),
-		KeyspaceID: keyspaceID,
+		TableID:  tableID,
+		StartKey: ToComparableKey(startKey),
+		EndKey:   ToComparableKey(endKey),
 	}
 }
 
