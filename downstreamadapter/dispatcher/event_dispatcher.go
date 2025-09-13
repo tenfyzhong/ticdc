@@ -196,17 +196,17 @@ func (d *EventDispatcher) EmitBootstrap() bool {
 	ts := d.GetStartTs()
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
 	currentTables := make([]*common.TableInfo, 0, len(tables))
-	for i := 0; i < len(tables); i++ {
-		err := schemaStore.RegisterTable(tables[i], ts)
+	for _, table := range tables {
+		err := schemaStore.RegisterTable(d.tableSpan.KeyspaceID, table, ts)
 		if err != nil {
 			log.Warn("register table to schemaStore failed",
-				zap.Int64("tableID", tables[i]),
+				zap.Int64("tableID", table),
 				zap.Uint64("startTs", ts),
 				zap.Error(err),
 			)
 			continue
 		}
-		tableInfo, err := schemaStore.GetTableInfo(tables[i], ts)
+		tableInfo, err := schemaStore.GetTableInfo(d.tableSpan.KeyspaceID, table, ts)
 		if err != nil {
 			log.Warn("get table info failed, just ignore",
 				zap.Stringer("changefeed", d.sharedInfo.changefeedID),

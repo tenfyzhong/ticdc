@@ -148,16 +148,14 @@ func (c *server) initialize(ctx context.Context) error {
 		appctx.GetService[messaging.MessageCenter](appctx.MessageCenter).OnNodeChanges)
 
 	conf := config.GetGlobalServerConfig()
+	schemaStore := schemastore.New(ctx, conf.DataDir, c.pdClient, c.pdEndpoints)
 	subscriptionClient := logpuller.NewSubscriptionClient(
 		&logpuller.SubscriptionClientConfig{
 			RegionRequestWorkerPerStore: 8,
 		}, c.pdClient,
-		// TODO tenfyzhong 2025-09-12 23:35:24 how to pass the kvstorage
-		// paramater?
-		// txnutil.NewLockerResolver(c.KVStorage.(tikv.Storage)), c.security,
-		txnutil.NewLockerResolver(nil), c.security,
+		txnutil.NewLockerResolver(schemaStore.(txnutil.KVStorageGetter)),
+		c.security,
 	)
-	schemaStore := schemastore.New(ctx, conf.DataDir, subscriptionClient, c.pdClient, c.pdEndpoints)
 	eventStore := eventstore.New(ctx, conf.DataDir, subscriptionClient)
 	eventService := eventservice.New(eventStore, schemaStore)
 	c.upstreamManager = upstream.NewManager(ctx, upstream.NodeTopologyCfg{

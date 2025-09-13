@@ -310,8 +310,13 @@ func (c *Controller) loadTables(startTs uint64) ([]commonEvent.Table, error) {
 		return nil, errors.Cause(err)
 	}
 
+	keyspaceID := uint32(0)
+	if c.keyspaceMeta != nil {
+		keyspaceID = c.keyspaceMeta.Id
+	}
+
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	tables, err := schemaStore.GetAllPhysicalTables(startTs, f)
+	tables, err := schemaStore.GetAllPhysicalTables(keyspaceID, startTs, f)
 	return tables, err
 }
 

@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/api/middleware"
 	"github.com/pingcap/ticdc/downstreamadapter/sink"
@@ -102,15 +101,10 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		return
 	}
 
-	var keyspaceMeta *keyspacepb.KeyspaceMeta
-	var ok bool
-	if obj, exists := c.Get(api.CtxKeyspaceMeta); exists {
-		keyspaceMeta, ok = obj.(*keyspacepb.KeyspaceMeta)
-		if !ok {
-			_ = c.Error(errors.ErrLoadKeyspaceFailed.GenWithStack("invalid keyspace meta"))
-			return
-		}
-
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
 	}
 
 	co, err := h.server.GetCoordinator()
@@ -190,14 +184,16 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	if keyspaceMeta != nil && keyspaceMeta.Id != 0 {
-		if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
-			_ = c.Error(err)
-			return
-		}
+	if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
+		_ = c.Error(err)
+		return
 	}
 
-	kvStorage := schemaStore.GetKVStorage(keyspace)
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 
 	ineligibleTables, _, err := getVerifiedTables(ctx, replicaCfg, kvStorage, cfg.StartTs, scheme, topic, protocol)
 	if err != nil {
@@ -676,8 +672,18 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
 
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	kvStorage := schemaStore.GetKVStorage(keyspace)
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 
 	// use checkpointTs get snapshot from kv storage
 	ineligibleTables, _, err := getVerifiedTables(ctx, oldCfInfo.Config, kvStorage, status.CheckpointTs, scheme, topic, protocol)

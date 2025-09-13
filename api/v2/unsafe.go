@@ -22,7 +22,6 @@ import (
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	cerror "github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/txnutil/gc"
-	"github.com/tikv/client-go/v2/tikv"
 )
 
 // CDCMetaData returns all etcd key values used by cdc
@@ -50,17 +49,25 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		return
 	}
 
-	keyspace := GetKeyspaceValueWithDefault(c)
+	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	kvStorage := schemaStore.GetKVStorage(keyspace)
+	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 
 	if kvStorage == nil {
 		c.Status(http.StatusServiceUnavailable)
 		return
 	}
 
-	txnResolver := txnutil.NewLockerResolver(kvStorage.(tikv.Storage))
-	if err := txnResolver.Resolve(c, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
+	txnResolver := txnutil.NewLockerResolver(schemaStore.(txnutil.KVStorageGetter))
+	if err := txnResolver.Resolve(c, keyspaceMeta.Id, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
 		_ = c.Error(err)
 		return
 	}
