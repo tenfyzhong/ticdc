@@ -47,6 +47,7 @@ func TableIDToComparableSpan(keyspaceID uint32, tableID int64) heartbeatpb.Table
 		TableID:  tableID,
 		StartKey: ToComparableKey(startKey),
 		EndKey:   ToComparableKey(endKey),
+		// TODO tenfyzhong 2025-09-13 22:19:19 Add KeyspaceID
 	}
 }
 
