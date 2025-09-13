@@ -555,7 +555,7 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 				log.Warn("get ts failed", zap.Error(err))
 				continue
 			}
-			// TODO tenfyzhong 2025-09-13 18:02:02 should use TxnSafePoint ?
+			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
 			p.doGc(gcState.TxnSafePoint)
 		}
 	}
