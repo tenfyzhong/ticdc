@@ -849,7 +849,8 @@ func (c *eventBroker) addDispatcher(info DispatcherInfo) error {
 
 	status := c.getOrSetChangefeedStatus(changefeedID)
 	dispatcher := newDispatcherStat(info, filter, scanWorkerIndex, workerIndex, status)
-	if span.Equal(common.DDLSpan) {
+	// TODO tenfyzhong 2025-09-13 23:39:46 why return early
+	if span.Equal(common.KeyspaceDDLSpan(span.KeyspaceID)) {
 		c.tableTriggerDispatchers.Store(id, dispatcher)
 		log.Info("table trigger dispatcher register dispatcher",
 			zap.Uint64("clusterID", c.tidbClusterID),
