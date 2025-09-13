@@ -278,7 +278,7 @@ func (pc *pdAPIClient) scanRegions(
 
 func (pc *pdAPIClient) LoadKeyspace(ctx context.Context, name string) (*keyspacepb.KeyspaceMeta, error) {
 	if kerneltype.IsClassic() {
-		return nil, nil
+		return &keyspacepb.KeyspaceMeta{}, nil
 	}
 	return pc.grpcClient.LoadKeyspace(ctx, name)
 }

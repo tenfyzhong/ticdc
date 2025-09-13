@@ -369,7 +369,7 @@ func TestRedoUncompeleteTableSpanDispatcherHandleEvents(t *testing.T) {
 func TestRedoTableTriggerEventDispatcherInMysql(t *testing.T) {
 	redoCount = 0
 
-	ddlTableSpan := common.DDLSpan
+	ddlTableSpan := common.KeyspaceDDLSpan(0)
 	sink := sink.NewMockSink(common.MysqlSinkType)
 	tableTriggerEventDispatcher := newRedoDispatcherForTest(sink, ddlTableSpan)
 
@@ -435,7 +435,7 @@ func TestRedoTableTriggerEventDispatcherInMysql(t *testing.T) {
 func TestRedoTableTriggerEventDispatcherInKafka(t *testing.T) {
 	redoCount = 0
 
-	ddlTableSpan := common.DDLSpan
+	ddlTableSpan := common.KeyspaceDDLSpan(0)
 	sink := sink.NewMockSink(common.KafkaSinkType)
 	tableTriggerEventDispatcher := newRedoDispatcherForTest(sink, ddlTableSpan)
 

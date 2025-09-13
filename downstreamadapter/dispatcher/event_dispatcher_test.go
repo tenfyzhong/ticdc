@@ -453,7 +453,7 @@ func TestUncompeleteTableSpanDispatcherHandleEvents(t *testing.T) {
 func TestTableTriggerEventDispatcherInMysql(t *testing.T) {
 	count = 0
 
-	ddlTableSpan := common.DDLSpan
+	ddlTableSpan := common.KeyspaceDDLSpan(0)
 	sink := sink.NewMockSink(common.MysqlSinkType)
 	tableTriggerEventDispatcher := newDispatcherForTest(sink, ddlTableSpan)
 	require.Nil(t, tableTriggerEventDispatcher.tableSchemaStore)
@@ -533,7 +533,7 @@ func TestTableTriggerEventDispatcherInMysql(t *testing.T) {
 func TestTableTriggerEventDispatcherInKafka(t *testing.T) {
 	count = 0
 
-	ddlTableSpan := common.DDLSpan
+	ddlTableSpan := common.KeyspaceDDLSpan(0)
 	sink := sink.NewMockSink(common.KafkaSinkType)
 	tableTriggerEventDispatcher := newDispatcherForTest(sink, ddlTableSpan)
 	require.Nil(t, tableTriggerEventDispatcher.tableSchemaStore)
