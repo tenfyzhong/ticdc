@@ -149,9 +149,10 @@ func (c *Controller) AddNewTable(table commonEvent.Table, startTs uint64) {
 
 	span := common.TableIDToComparableSpan(keyspaceID, table.TableID)
 	tableSpan := &heartbeatpb.TableSpan{
-		TableID:  table.TableID,
-		StartKey: span.StartKey,
-		EndKey:   span.EndKey,
+		TableID:    table.TableID,
+		StartKey:   span.StartKey,
+		EndKey:     span.EndKey,
+		KeyspaceID: keyspaceID,
 	}
 	tableSpans := []*heartbeatpb.TableSpan{tableSpan}
 

@@ -214,9 +214,10 @@ func (c *Controller) processTableSpans(
 		}
 		span := common.TableIDToComparableSpan(keyspaceID, table.TableID)
 		tableSpan := &heartbeatpb.TableSpan{
-			TableID:  table.TableID,
-			StartKey: span.StartKey,
-			EndKey:   span.EndKey,
+			TableID:    table.TableID,
+			StartKey:   span.StartKey,
+			EndKey:     span.EndKey,
+			KeyspaceID: keyspaceID,
 		}
 		log.Info("table already working in other node",
 			zap.Stringer("changefeed", c.changefeedID),
