@@ -109,6 +109,8 @@ func CreateTiStore(urls string, credential *security.Credential, keyspaceName st
 	if keyspaceName != "" {
 		tiPath += "&keyspaceName=" + keyspaceName
 	}
+	// TEST tenfyzhong 2025-09-15 22:23:30
+	log.Info("createTiStore", zap.String("tiPath", tiPath))
 	securityCfg := tikvconfig.Security{
 		ClusterSSLCA:    credential.CAPath,
 		ClusterSSLCert:  credential.CertPath,
