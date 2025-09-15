@@ -184,19 +184,22 @@ func (p *ddlJobFetcher) initDDLTableInfo(ctx context.Context, kvStorage kv.Stora
 	}
 
 	// TEST tenfyzhong 2025-09-15 22:20:51
-	log.Info("ListDatabases", zap.Any("dbInfos", dbInfos))
+	keyspace := kvStorage.GetKeyspace()
+	log.Info("ListDatabases", zap.String("keyspace", keyspace), zap.Any("dbInfos", dbInfos))
 
 	db, err := findDBByName(dbInfos, mysql.SystemDB)
 	if err != nil {
 		return errors.Trace(err)
 	}
 	// TEST tenfyzhong 2025-09-15 22:20:51
-	log.Info("findDBByName", zap.String("systemDB", mysql.SystemDB), zap.Any("db", db))
+	log.Info("findDBByName", zap.String("keyspace", keyspace), zap.String("systemDB", mysql.SystemDB), zap.Any("db", db))
 
 	// BUG tenfyzhong 2025-09-15 20:32:12 ListTables returns an error, it will
 	// cause panic
 	tbls, err := snap.ListTables(ctx, db.ID)
 	if err != nil {
+		// TEST tenfyzhong 2025-09-15 22:36:05
+		log.Error("ListTables", zap.String("keyspace", keyspace), zap.Int64("id", db.ID))
 		return errors.Trace(err)
 	}
 
