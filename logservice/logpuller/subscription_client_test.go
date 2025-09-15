@@ -23,7 +23,6 @@ import (
 	"github.com/pingcap/kvproto/pkg/cdcpb"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/logservice/logpuller/regionlock"
-	"github.com/pingcap/ticdc/logservice/txnutil"
 	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/pdutil"
@@ -119,7 +118,6 @@ func TestSubscriptionWithFailedTiKV(t *testing.T) {
 	pdClock := pdutil.NewClock4Test()
 	kvStorage, err := tikv.NewTestTiKVStore(rpcClient, pdClient, nil, nil, 0)
 	require.Nil(t, err)
-	lockResolver := txnutil.NewLockerResolver(kvStorage)
 
 	invalidStore := "localhost:1"
 	cluster.AddStore(1, addr1)
@@ -134,7 +132,7 @@ func TestSubscriptionWithFailedTiKV(t *testing.T) {
 	client := NewSubscriptionClient(
 		clientConfig,
 		pdClient,
-		lockResolver,
+		nil, // we don't need it in this unittest, so we can pass nil
 		&security.Credential{},
 	)
 
