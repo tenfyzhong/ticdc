@@ -536,6 +536,8 @@ func (c *Controller) CreateChangefeed(ctx context.Context, info *config.ChangeFe
 		return errors.Trace(err)
 	}
 	c.changefeedDB.AddAbsentChangefeed(changefeed.NewChangefeed(info.ChangefeedID, info, info.StartTs, true))
+	// TODO tenfyzhong 2025-09-15 19:50:27 remove log
+	log.Info("all changefeeds", zap.Any("changefeeds", c.changefeedDB.GetAllChangefeeds()))
 	return nil
 }
 
@@ -629,6 +631,9 @@ func (c *Controller) UpdateChangefeed(ctx context.Context, change *config.Change
 func (c *Controller) ListChangefeeds(_ context.Context, keyspace string) ([]*config.ChangeFeedInfo, []*config.ChangeFeedStatus, error) {
 	c.apiLock.RLock()
 	defer c.apiLock.RUnlock()
+
+	// TODO tenfyzhong 2025-09-15 19:50:27 remove log
+	log.Info("all changefeeds", zap.String("keyspace", keyspace), zap.Any("changefeeds", c.changefeedDB.GetAllChangefeeds()))
 
 	cfs := c.changefeedDB.GetAllChangefeedsByKeyspace(keyspace)
 	infos := make([]*config.ChangeFeedInfo, 0, len(cfs))
