@@ -370,5 +370,5 @@ replace github.com/go-ldap/ldap/v3 v3.4.4 => github.com/yangkeao/ldap/v3 v3.4.5-
 
 replace github.com/IBM/sarama v1.41.2 => github.com/pingcap/sarama v1.41.2-pingcap-20250416
 
-// TODO tenfyzhong 2025-09-02 10:28:03 remove this replace before merge to master
+// DO-NOT-MERGE tenfyzhong 2025-09-02 10:28:03 remove this replace before merge to master
 replace github.com/pingcap/tiflow => github.com/tenfyzhong/tiflow v0.0.0-20250902015837-94c9f6372559

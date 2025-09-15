@@ -133,45 +133,45 @@ func (mr *MockChangefeedInterfaceMockRecorder) List(ctx, keyspace, state interfa
 }
 
 // MergeTable mocks base method.
-func (m *MockChangefeedInterface) MergeTable(ctx context.Context, keyspace, name string, tableID int64) error {
+func (m *MockChangefeedInterface) MergeTable(ctx context.Context, keyspace, name string, tableID, mode int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MergeTable", ctx, keyspace, name, tableID)
+	ret := m.ctrl.Call(m, "MergeTable", ctx, keyspace, name, tableID, mode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MergeTable indicates an expected call of MergeTable.
-func (mr *MockChangefeedInterfaceMockRecorder) MergeTable(ctx, keyspace, name, tableID interface{}) *gomock.Call {
+func (mr *MockChangefeedInterfaceMockRecorder) MergeTable(ctx, keyspace, name, tableID, mode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MergeTable), ctx, keyspace, name, tableID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MergeTable), ctx, keyspace, name, tableID, mode)
 }
 
 // MoveSplitTable mocks base method.
-func (m *MockChangefeedInterface) MoveSplitTable(ctx context.Context, keyspace, name string, tableID int64, targetNode string) error {
+func (m *MockChangefeedInterface) MoveSplitTable(ctx context.Context, keyspace, name string, tableID int64, targetNode string, mode int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MoveSplitTable", ctx, keyspace, name, tableID, targetNode)
+	ret := m.ctrl.Call(m, "MoveSplitTable", ctx, keyspace, name, tableID, targetNode, mode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MoveSplitTable indicates an expected call of MoveSplitTable.
-func (mr *MockChangefeedInterfaceMockRecorder) MoveSplitTable(ctx, keyspace, name, tableID, targetNode interface{}) *gomock.Call {
+func (mr *MockChangefeedInterfaceMockRecorder) MoveSplitTable(ctx, keyspace, name, tableID, targetNode, mode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveSplitTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MoveSplitTable), ctx, keyspace, name, tableID, targetNode)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveSplitTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MoveSplitTable), ctx, keyspace, name, tableID, targetNode, mode)
 }
 
 // MoveTable mocks base method.
-func (m *MockChangefeedInterface) MoveTable(ctx context.Context, keyspace, name string, tableID int64, targetNode string) error {
+func (m *MockChangefeedInterface) MoveTable(ctx context.Context, keyspace, name string, tableID int64, targetNode string, mode int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MoveTable", ctx, keyspace, name, tableID, targetNode)
+	ret := m.ctrl.Call(m, "MoveTable", ctx, keyspace, name, tableID, targetNode, mode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MoveTable indicates an expected call of MoveTable.
-func (mr *MockChangefeedInterfaceMockRecorder) MoveTable(ctx, keyspace, name, tableID, targetNode interface{}) *gomock.Call {
+func (mr *MockChangefeedInterfaceMockRecorder) MoveTable(ctx, keyspace, name, tableID, targetNode, mode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MoveTable), ctx, keyspace, name, tableID, targetNode)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveTable", reflect.TypeOf((*MockChangefeedInterface)(nil).MoveTable), ctx, keyspace, name, tableID, targetNode, mode)
 }
 
 // Pause mocks base method.
@@ -203,9 +203,9 @@ func (mr *MockChangefeedInterfaceMockRecorder) Resume(ctx, cfg, keyspace, name i
 }
 
 // SplitTableByRegionCount mocks base method.
-func (m *MockChangefeedInterface) SplitTableByRegionCount(ctx context.Context, keyspace, name string, tableID int64) error {
+func (m *MockChangefeedInterface) SplitTableByRegionCount(ctx context.Context, keyspace, name string, tableID int64, mode int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SplitTableByRegionCount", ctx, keyspace, name, tableID)
+	ret := m.ctrl.Call(m, "SplitTableByRegionCount", ctx, keyspace, name, tableID, mode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
