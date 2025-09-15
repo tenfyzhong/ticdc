@@ -177,6 +177,8 @@ func (p *ddlJobFetcher) initDDLTableInfo(ctx context.Context, kvStorage kv.Stora
 		return errors.Trace(err)
 	}
 	snap := getSnapshotMeta(kvStorage, version.Ver)
+	// TEST tenfyzhong 2025-09-15 22:47:26
+	log.Info("CurrentVersion", zap.Any("version", version))
 
 	dbInfos, err := snap.ListDatabases()
 	if err != nil {
