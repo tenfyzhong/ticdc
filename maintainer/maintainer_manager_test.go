@@ -437,7 +437,7 @@ type mockSchemaStore struct {
 	tables []commonEvent.Table
 }
 
-func (m *mockSchemaStore) GetAllPhysicalTables(snapTs common.Ts, filter filter.Filter) ([]commonEvent.Table, error) {
+func (m *mockSchemaStore) GetAllPhysicalTables(keyspaceID uint32, snapTs common.Ts, filter filter.Filter) ([]commonEvent.Table, error) {
 	return m.tables, nil
 }
 
