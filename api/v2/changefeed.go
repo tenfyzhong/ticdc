@@ -822,7 +822,8 @@ func (h *OpenAPIV2) MoveTable(c *gin.Context) {
 	}
 
 	targetNodeID := c.Query("targetNodeID")
-	err = maintainer.MoveTable(int64(tableId), node.ID(targetNodeID))
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	err = maintainer.MoveTable(int64(tableId), node.ID(targetNodeID), mode)
 	if err != nil {
 		log.Error("failed to move table", zap.Error(err), zap.Int64("tableID", tableId), zap.String("targetNodeID", targetNodeID))
 		_ = c.Error(err)
@@ -896,7 +897,8 @@ func (h *OpenAPIV2) MoveSplitTable(c *gin.Context) {
 	}
 
 	targetNodeID := c.Query("targetNodeID")
-	err = maintainer.MoveSplitTable(int64(tableId), node.ID(targetNodeID))
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	err = maintainer.MoveSplitTable(int64(tableId), node.ID(targetNodeID), mode)
 	if err != nil {
 		log.Error("failed to move split table", zap.Error(err), zap.Int64("tableID", tableId), zap.String("targetNodeID", targetNodeID))
 		_ = c.Error(err)
@@ -967,8 +969,8 @@ func (h *OpenAPIV2) SplitTableByRegionCount(c *gin.Context) {
 		_ = c.Error(apperror.ErrMaintainerNotFounded)
 		return
 	}
-
-	err = maintainer.SplitTableByRegionCount(int64(tableId))
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	err = maintainer.SplitTableByRegionCount(int64(tableId), mode)
 	if err != nil {
 		log.Error("failed to split table by region count", zap.Error(err), zap.Int64("tableID", tableId))
 		_ = c.Error(err)
@@ -1039,7 +1041,8 @@ func (h *OpenAPIV2) MergeTable(c *gin.Context) {
 		return
 	}
 
-	err = maintainer.MergeTable(int64(tableId))
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	err = maintainer.MergeTable(int64(tableId), mode)
 	if err != nil {
 		log.Error("failed to merge table", zap.Error(err), zap.Int64("tableID", tableId))
 		_ = c.Error(err)
@@ -1098,7 +1101,8 @@ func (h *OpenAPIV2) ListTables(c *gin.Context) {
 		return
 	}
 
-	tables := maintainer.GetTables()
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	tables := maintainer.GetTables(mode)
 
 	nodeTableInfoMap := make(map[string]*NodeTableInfo)
 
@@ -1168,7 +1172,8 @@ func (h *OpenAPIV2) getDispatcherCount(c *gin.Context) {
 		return
 	}
 
-	number := maintainer.GetDispatcherCount()
+	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
+	number := maintainer.GetDispatcherCount(mode)
 	c.JSON(http.StatusOK, &DispatcherCount{Count: number})
 }
 
@@ -1283,12 +1288,10 @@ func getVerifiedTables(
 		return nil, nil, err
 	}
 	err = eventRouter.VerifyTables(tableInfos)
-	log.Error("NewEventRouter", zap.Error(err), zap.Any("tableInfos", tableInfos), zap.Any("startTs", startTs))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	log.Error("columnselector.New")
 	selectors, err := columnselector.New(replicaConfig.Sink)
 	if err != nil {
 		return nil, nil, err

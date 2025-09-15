@@ -448,6 +448,7 @@ func (s *schemaStore) GetTableDDLEventState(keyspaceID uint32, tableID int64) (D
 	}, nil
 }
 
+// FetchTableDDLEvents returns the ddl events which finishedTs are within the range (start, end]
 func (s *schemaStore) FetchTableDDLEvents(keyspaceID uint32, dispatcherID common.DispatcherID, tableID int64, tableFilter filter.Filter, start, end uint64) ([]commonEvent.DDLEvent, error) {
 	schemaStore, err := s.getKeyspaceSchemaStore(keyspaceID)
 	if err != nil {
@@ -476,11 +477,6 @@ func (s *schemaStore) FetchTableTriggerDDLEvents(keyspaceID uint32, tableFilter 
 	if limit == 0 {
 		log.Panic("limit cannot be 0")
 	}
-
-	// HACK tenfyzhong 2025-09-13 20:51:37
-	// if keyspaceID == 0 {
-	// 	keyspaceID = 1
-	// }
 
 	schemaStore, err := s.getKeyspaceSchemaStore(keyspaceID)
 	if err != nil {

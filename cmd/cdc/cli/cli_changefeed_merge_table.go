@@ -29,6 +29,7 @@ type mergeTableChangefeedOptions struct {
 	changefeedID string
 	keyspace     string
 	tableId      int64
+	mode         int64
 }
 
 // newCreateChangefeedOptions creates new options for the `cli changefeed create` command.
@@ -42,6 +43,7 @@ func (o *mergeTableChangefeedOptions) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&o.keyspace, "keyspace", "k", "default", "Replication task (changefeed) Keyspace")
 	cmd.PersistentFlags().StringVarP(&o.changefeedID, "changefeed-id", "c", "", "Replication task (changefeed) ID")
 	cmd.PersistentFlags().Int64VarP(&o.tableId, "table-id", "t", 0, "the id of table to move")
+	cmd.PersistentFlags().Int64Var(&o.mode, "mode", 0, "enable redo when mode is 1")
 	_ = cmd.MarkPersistentFlagRequired("changefeed-id")
 	_ = cmd.MarkPersistentFlagRequired("table-id")
 }
@@ -61,7 +63,7 @@ func (o *mergeTableChangefeedOptions) complete(f factory.Factory) error {
 func (o *mergeTableChangefeedOptions) run(cmd *cobra.Command) error {
 	ctx := context.Background()
 
-	err := o.apiClientV2.Changefeeds().MergeTable(ctx, o.keyspace, o.changefeedID, o.tableId)
+	err := o.apiClientV2.Changefeeds().MergeTable(ctx, o.keyspace, o.changefeedID, o.tableId, o.mode)
 	var errStr string
 	if err != nil {
 		errStr = err.Error()
