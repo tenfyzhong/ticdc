@@ -209,10 +209,7 @@ func (c *Controller) processTableSpans(
 	// Add new table if not working
 	if isTableWorking {
 		// Handle existing table spans
-		keyspaceID := uint32(0)
-		if c.keyspaceMeta != nil {
-			keyspaceID = c.keyspaceMeta.Id
-		}
+		keyspaceID := c.GetKeyspaceID()
 		span := common.TableIDToComparableSpan(keyspaceID, table.TableID)
 		tableSpan := &heartbeatpb.TableSpan{
 			TableID:    table.TableID,

@@ -71,7 +71,7 @@ func NewMounter(tz *time.Location, integrity *integrity.Config) Mounter {
 
 // DecodeToChunk decodes the raw KV entry to a chunk, it returns the number of rows decoded.
 func (m *mounter) DecodeToChunk(raw *common.RawKVEntry, tableInfo *common.TableInfo, chk *chunk.Chunk) (int, *integrity.Checksum, error) {
-	raw.Key = removeKeyspacePrefix(raw.Key)
+	raw.Key = RemoveKeyspacePrefix(raw.Key)
 	recordID, err := tablecodec.DecodeRowKey(raw.Key)
 	if err != nil {
 		return 0, nil, errors.Trace(err)
@@ -163,8 +163,8 @@ const (
 	apiV2TxnModePrefix byte = 'x'
 )
 
-// removeKeyspacePrefix is used to remove keyspace prefix from the key.
-func removeKeyspacePrefix(key []byte) []byte {
+// RemoveKeyspacePrefix is used to remove keyspace prefix from the key.
+func RemoveKeyspacePrefix(key []byte) []byte {
 	if len(key) <= keyspacePrefixLen {
 		return key
 	}
@@ -191,7 +191,7 @@ func ParseDDLJob(rawKV *common.RawKVEntry, ddlTableInfo *DDLTableInfo) (*model.J
 		return job, err
 	}
 
-	rawKV.Key = removeKeyspacePrefix(rawKV.Key)
+	rawKV.Key = RemoveKeyspacePrefix(rawKV.Key)
 	recordID, err := tablecodec.DecodeRowKey(rawKV.Key)
 	if err != nil {
 		return nil, errors.Trace(err)
