@@ -29,6 +29,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/common"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
 	"github.com/pingcap/ticdc/pkg/config"
+	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
 	"github.com/pingcap/ticdc/pkg/txnutil/gc"
@@ -151,16 +152,27 @@ func newPersistentStorage(
 	return dataStorage
 }
 
+func (p *persistentStorage) getGcSafePoint(ctx context.Context) (uint64, error) {
+	if kerneltype.IsClassic() {
+		return gc.SetServiceGCSafepoint(ctx, p.pdCli, "cdc-new-store", 0, 0)
+	}
+
+	gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
+	gcState, err := gc.GetGCState(ctx, gcClient)
+	if err != nil {
+		return 0, err
+	}
+
+	return gcState.TxnSafePoint, nil
+}
+
 func (p *persistentStorage) initialize(ctx context.Context) {
 	var gcSafePoint uint64
 	for {
 		var err error
-		// TODO tenfyzhong 2025-09-13 17:18:40 compatible with classic mode
-		gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-		gcState, err := gc.GetGCState(ctx, gcClient)
+		gcSafePoint, err = p.getGcSafePoint(ctx)
 		if err == nil {
-			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
-			gcSafePoint = gcState.TxnSafePoint
+			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcSafePoint))
 			break
 		}
 
@@ -548,15 +560,12 @@ func (p *persistentStorage) gc(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			// TODO tenfyzhong 2025-09-13 17:18:40 compatible with classic mode
-			gcClient := p.pdCli.GetGCStatesClient(p.keyspaceID)
-			gcState, err := gc.GetGCState(ctx, gcClient)
+			gcSafePoint, err := p.getGcSafePoint(ctx)
 			if err != nil {
 				log.Warn("get ts failed", zap.Error(err))
 				continue
 			}
-			log.Info("GetGCState success", zap.Uint32("keyspaceID", p.keyspaceID), zap.Any("gcState", gcState))
-			p.doGc(gcState.TxnSafePoint)
+			p.doGc(gcSafePoint)
 		}
 	}
 }
