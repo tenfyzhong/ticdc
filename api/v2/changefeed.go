@@ -184,6 +184,10 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
+	// The ctx's lifecycle is the same as the HTTP request.
+	// The schema store may use the context to fetch database information asynchronously.
+	// Therefore, we cannot use the context of the HTTP request.
+	// We create a new context here.
 	schemaCxt := context.Background()
 	if err := schemaStore.RegisterKeyspace(schemaCxt, keyspaceMeta); err != nil {
 		_ = c.Error(err)
