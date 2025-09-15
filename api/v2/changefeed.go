@@ -184,7 +184,8 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
 	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	if err := schemaStore.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
+	schemaCxt := context.Background()
+	if err := schemaStore.RegisterKeyspace(schemaCxt, keyspaceMeta); err != nil {
 		_ = c.Error(err)
 		return
 	}
