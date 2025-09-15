@@ -266,30 +266,10 @@ func (s *schemaStore) initialize(ctx context.Context) {
 	}
 }
 
-// TODO tenfyzhong 2025-09-13 13:44:41
 func (s *schemaStore) Run(ctx context.Context) error {
 	log.Info("schema store begin to run")
+	s.initialize(ctx)
 	return nil
-	// defer func() {
-	// 	log.Info("schema store exited")
-	// }()
-
-	// s.initialize(ctx)
-
-	// eg, ctx := errgroup.WithContext(ctx)
-	// eg.Go(func() error {
-	// 	return s.updateResolvedTsPeriodically(ctx)
-	// })
-
-	// eg.Go(func() error {
-	// 	return s.dataStorage.gc(ctx)
-	// })
-	//
-	// eg.Go(func() error {
-	// 	return s.dataStorage.persistUpperBoundPeriodically(ctx)
-	// })
-
-	// return eg.Wait()
 }
 
 func (s *schemaStore) Close(ctx context.Context) error {
@@ -307,82 +287,6 @@ func (s *schemaStore) Close(ctx context.Context) error {
 	}
 	return nil
 }
-
-// func (s *schemaStore) updateResolvedTsPeriodically(ctx context.Context) error {
-// 	tryUpdateResolvedTs := func() {
-// 		pendingTs := s.pendingResolvedTs.Load()
-// 		defer func() {
-// 			pdPhyTs := oracle.GetPhysical(s.pdClock.CurrentTime())
-// 			resolvedPhyTs := oracle.ExtractPhysical(pendingTs)
-// 			resolvedLag := float64(pdPhyTs-resolvedPhyTs) / 1e3
-// 			metrics.SchemaStoreResolvedTsLagGauge.Set(resolvedLag)
-// 		}()
-//
-// 		if pendingTs <= s.resolvedTs.Load() {
-// 			return
-// 		}
-// 		resolvedEvents := s.unsortedCache.fetchSortedDDLEventBeforeTS(pendingTs)
-// 		if len(resolvedEvents) != 0 {
-// 			log.Info("schema store begin to apply resolved ddl events",
-// 				zap.Uint64("resolvedTs", pendingTs),
-// 				zap.Int("resolvedEventsLen", len(resolvedEvents)))
-//
-// 			for _, event := range resolvedEvents {
-// 				if event.Job.BinlogInfo.FinishedTS <= s.finishedDDLTs ||
-// 					event.Job.BinlogInfo.SchemaVersion == 0 /* means the ddl is ignored in upstream */ {
-// 					log.Info("skip already applied ddl job",
-// 						zap.Any("type", event.Job.Type),
-// 						zap.String("job", event.Job.Query),
-// 						zap.Int64("jobSchemaVersion", event.Job.BinlogInfo.SchemaVersion),
-// 						zap.Uint64("jobFinishTs", event.Job.BinlogInfo.FinishedTS),
-// 						zap.Uint64("jobCommitTs", event.CommitTs),
-// 						zap.Any("storeSchemaVersion", s.schemaVersion),
-// 						zap.Uint64("storeFinishedDDLTS", s.finishedDDLTs))
-// 					continue
-// 				}
-// 				log.Info("handle a ddl job",
-// 					zap.Int64("schemaID", event.Job.SchemaID),
-// 					zap.String("schemaName", event.Job.SchemaName),
-// 					zap.Int64("tableID", event.Job.TableID),
-// 					zap.String("tableName", event.Job.TableName),
-// 					zap.Any("type", event.Job.Type),
-// 					zap.String("job", event.Job.Query),
-// 					zap.Int64("jobSchemaVersion", event.Job.BinlogInfo.SchemaVersion),
-// 					zap.Uint64("jobFinishTs", event.Job.BinlogInfo.FinishedTS),
-// 					zap.Uint64("jobCommitTs", event.CommitTs),
-// 					zap.Any("storeSchemaVersion", s.schemaVersion),
-// 					zap.Any("tableInfo", event.Job.BinlogInfo.TableInfo),
-// 					zap.Uint64("storeFinishedDDLTS", s.finishedDDLTs))
-//
-// 				// need to update the following two members for every event to filter out later duplicate events
-// 				s.schemaVersion = event.Job.BinlogInfo.SchemaVersion
-// 				s.finishedDDLTs = event.Job.BinlogInfo.FinishedTS
-//
-// 				s.dataStorage.handleDDLJob(event.Job)
-// 			}
-// 		}
-// 		// When register a new table, it will load all ddl jobs from disk for the table,
-// 		// so we can only update resolved ts after all ddl jobs are written to disk
-// 		// Can we optimize it to update resolved ts more eagerly?
-// 		s.resolvedTs.Store(pendingTs)
-// 		s.dataStorage.updateUpperBound(UpperBoundMeta{
-// 			FinishedDDLTs: s.finishedDDLTs,
-// 			SchemaVersion: s.schemaVersion,
-// 			ResolvedTs:    pendingTs,
-// 		})
-// 	}
-// 	ticker := time.NewTicker(50 * time.Millisecond)
-// 	for {
-// 		select {
-// 		case <-ctx.Done():
-// 			return nil
-// 		case <-ticker.C:
-// 			tryUpdateResolvedTs()
-// 		case <-s.notifyCh:
-// 			tryUpdateResolvedTs()
-// 		}
-// 	}
-// }
 
 func (s *schemaStore) GetAllPhysicalTables(keyspaceID uint32, snapTs uint64, filter filter.Filter) ([]commonEvent.Table, error) {
 	schemaStore, err := s.getKeyspaceSchemaStore(keyspaceID)
