@@ -85,7 +85,7 @@ func newDDLJobFetcher(
 }
 
 func (p *ddlJobFetcher) run(startTs uint64) error {
-	spans, err := getAllDDLSpan(p.keyspaceMeta.Id)
+	spans, err := getAllDDLSpan(p.getKeyspceID())
 	if err != nil {
 		return err
 	}
@@ -163,6 +163,13 @@ func (p *ddlJobFetcher) unmarshalDDL(rawKV *common.RawKVEntry) (*model.Job, erro
 	}
 
 	return event.ParseDDLJob(rawKV, p.ddlTableInfo)
+}
+
+func (p *ddlJobFetcher) getKeyspceID() uint32 {
+	if p.keyspaceMeta == nil {
+		return 0
+	}
+	return p.keyspaceMeta.Id
 }
 
 // getSnapshotMeta returns tidb meta information
