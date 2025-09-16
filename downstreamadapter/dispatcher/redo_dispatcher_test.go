@@ -74,7 +74,7 @@ func TestRedoDispatcherHandleEvents(t *testing.T) {
 	tableInfo := dmlEvent.TableInfo
 
 	sink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan, err := getCompleteTableSpan(0)
+	tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 	require.NoError(t, err)
 	dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 	require.Equal(t, uint64(0), dispatcher.GetCheckpointTs())
@@ -369,7 +369,7 @@ func TestRedoUncompeleteTableSpanDispatcherHandleEvents(t *testing.T) {
 func TestRedoTableTriggerEventDispatcherInMysql(t *testing.T) {
 	redoCount = 0
 
-	ddlTableSpan := common.KeyspaceDDLSpan(0)
+	ddlTableSpan := common.KeyspaceDDLSpan(common.DefaultKeyspaceID)
 	sink := sink.NewMockSink(common.MysqlSinkType)
 	tableTriggerEventDispatcher := newRedoDispatcherForTest(sink, ddlTableSpan)
 
@@ -435,7 +435,7 @@ func TestRedoTableTriggerEventDispatcherInMysql(t *testing.T) {
 func TestRedoTableTriggerEventDispatcherInKafka(t *testing.T) {
 	redoCount = 0
 
-	ddlTableSpan := common.KeyspaceDDLSpan(0)
+	ddlTableSpan := common.KeyspaceDDLSpan(common.DefaultKeyspaceID)
 	sink := sink.NewMockSink(common.KafkaSinkType)
 	tableTriggerEventDispatcher := newRedoDispatcherForTest(sink, ddlTableSpan)
 
@@ -513,7 +513,7 @@ func TestRedoDispatcherClose(t *testing.T) {
 
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		tableSpan, err := getCompleteTableSpan(0)
+		tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 		require.NoError(t, err)
 		dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 
@@ -536,7 +536,7 @@ func TestRedoDispatcherClose(t *testing.T) {
 	// test sink is not normal
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		tableSpan, err := getCompleteTableSpan(0)
+		tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 		require.NoError(t, err)
 		dispatcher := newRedoDispatcherForTest(sink, tableSpan)
 
@@ -581,7 +581,7 @@ func TestRedoBatchDMLEventsPartialFlush(t *testing.T) {
 	dmlEvent3.Length = 1
 
 	mockSink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan, err := getCompleteTableSpan(0)
+	tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 	require.NoError(t, err)
 	dispatcher := newRedoDispatcherForTest(mockSink, tableSpan)
 

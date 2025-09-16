@@ -109,7 +109,7 @@ func TestDispatcherHandleEvents(t *testing.T) {
 	tableInfo := dmlEvent.TableInfo
 
 	sink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan, err := getCompleteTableSpan(0)
+	tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 	require.NoError(t, err)
 	dispatcher := newDispatcherForTest(sink, tableSpan)
 	require.Equal(t, uint64(0), dispatcher.GetCheckpointTs())
@@ -452,7 +452,7 @@ func TestUncompeleteTableSpanDispatcherHandleEvents(t *testing.T) {
 func TestTableTriggerEventDispatcherInMysql(t *testing.T) {
 	count = 0
 
-	ddlTableSpan := common.KeyspaceDDLSpan(0)
+	ddlTableSpan := common.KeyspaceDDLSpan(common.DefaultKeyspaceID)
 	sink := sink.NewMockSink(common.MysqlSinkType)
 	tableTriggerEventDispatcher := newDispatcherForTest(sink, ddlTableSpan)
 	require.Nil(t, tableTriggerEventDispatcher.tableSchemaStore)
@@ -532,7 +532,7 @@ func TestTableTriggerEventDispatcherInMysql(t *testing.T) {
 func TestTableTriggerEventDispatcherInKafka(t *testing.T) {
 	count = 0
 
-	ddlTableSpan := common.KeyspaceDDLSpan(0)
+	ddlTableSpan := common.KeyspaceDDLSpan(common.DefaultKeyspaceID)
 	sink := sink.NewMockSink(common.KafkaSinkType)
 	tableTriggerEventDispatcher := newDispatcherForTest(sink, ddlTableSpan)
 	require.Nil(t, tableTriggerEventDispatcher.tableSchemaStore)
@@ -625,7 +625,7 @@ func TestDispatcherClose(t *testing.T) {
 
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		tableSpan, err := getCompleteTableSpan(0)
+		tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 		require.NoError(t, err)
 		dispatcher := newDispatcherForTest(sink, tableSpan)
 
@@ -648,7 +648,7 @@ func TestDispatcherClose(t *testing.T) {
 	// test sink is not normal
 	{
 		sink := sink.NewMockSink(common.MysqlSinkType)
-		tableSpan, err := getCompleteTableSpan(0)
+		tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 		require.NoError(t, err)
 		dispatcher := newDispatcherForTest(sink, tableSpan)
 
@@ -695,7 +695,7 @@ func TestBatchDMLEventsPartialFlush(t *testing.T) {
 	dmlEvent3.Length = 1
 
 	mockSink := sink.NewMockSink(common.MysqlSinkType)
-	tableSpan, err := getCompleteTableSpan(0)
+	tableSpan, err := getCompleteTableSpan(common.DefaultKeyspaceID)
 	require.NoError(t, err)
 	dispatcher := newDispatcherForTest(mockSink, tableSpan)
 
