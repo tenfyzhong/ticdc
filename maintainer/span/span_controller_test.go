@@ -33,7 +33,7 @@ func TestNewController(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -50,7 +50,7 @@ func TestController_AddNewTable(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -87,7 +87,7 @@ func TestController_GetTaskByID(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -141,7 +141,7 @@ func TestController_GetTasksByTableID(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -178,7 +178,7 @@ func TestController_GetTasksBySchemaID(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -219,7 +219,7 @@ func TestController_UpdateSchemaID(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -261,7 +261,7 @@ func TestController_Statistics(t *testing.T) {
 	ddlDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(changefeedID, ddlDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              ddlDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
@@ -420,7 +420,7 @@ func newControllerWithCheckerForTest(t *testing.T) *Controller {
 	tableTriggerEventDispatcherID := common.NewDispatcherID()
 	ddlSpan := replica.NewWorkingSpanReplication(cfID, tableTriggerEventDispatcherID,
 		common.DDLSpanSchemaID,
-		common.DDLSpan, &heartbeatpb.TableSpanStatus{
+		common.KeyspaceDDLSpan(common.DefaultKeyspaceID), &heartbeatpb.TableSpanStatus{
 			ID:              tableTriggerEventDispatcherID.ToPB(),
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,

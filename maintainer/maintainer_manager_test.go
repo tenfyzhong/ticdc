@@ -354,7 +354,7 @@ func TestMaintainerBootstrapWithTablesReported(t *testing.T) {
 	foundSize := 0
 	hasDDLDispatcher := false
 	for _, stm := range maintainer.controller.spanController.GetReplicating() {
-		if stm.Span.Equal(common.DDLSpan) {
+		if stm.Span.Equal(common.KeyspaceDDLSpan(common.DefaultKeyspaceID)) {
 			hasDDLDispatcher = true
 		}
 		for _, remotedId := range remotedIds {
