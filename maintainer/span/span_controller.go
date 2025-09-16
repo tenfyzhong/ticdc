@@ -169,7 +169,6 @@ func (c *Controller) AddNewTable(table commonEvent.Table, startTs uint64) {
 // AddWorkingSpans adds working spans
 func (c *Controller) AddWorkingSpans(tableMap utils.Map[*heartbeatpb.TableSpan, *replica.SpanReplication]) {
 	tableMap.Ascend(func(span *heartbeatpb.TableSpan, stm *replica.SpanReplication) bool {
-		// TODO tenfyzhong 2025-09-13 21:09:35 KeyspaceID should be set by caller
 		stm.Span.KeyspaceID = c.GetkeyspaceID()
 		c.AddReplicatingSpan(stm)
 		return true
@@ -181,7 +180,6 @@ func (c *Controller) AddWorkingSpans(tableMap utils.Map[*heartbeatpb.TableSpan, 
 func (c *Controller) AddNewSpans(schemaID int64, tableSpans []*heartbeatpb.TableSpan, startTs uint64) {
 	for _, span := range tableSpans {
 		dispatcherID := common.NewDispatcherID()
-		// TODO tenfyzhong 2025-09-13 21:09:35 KeyspaceID should be set by caller
 		span.KeyspaceID = c.GetkeyspaceID()
 		replicaSet := replica.NewSpanReplication(c.changefeedID, dispatcherID, schemaID, span, startTs, c.mode)
 		c.AddAbsentReplicaSet(replicaSet)

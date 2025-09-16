@@ -290,8 +290,6 @@ func (h *OpenAPIV2) ListChangeFeeds(c *gin.Context) {
 	}
 
 	keyspace := GetKeyspaceValueWithDefault(c)
-	// INFO tenfyzhong 2025-09-15 19:52:54 remove log
-	log.Info("list change feeds", zap.String("keyspace", keyspace))
 	changefeeds, statuses, err := co.ListChangefeeds(c, keyspace)
 	if err != nil {
 		_ = c.Error(err)
