@@ -193,9 +193,9 @@ func TestForwardToCoordinator(t *testing.T) {
 
 			// Check if error was recorded as expected
 			if tt.expectedError {
-				assert.NotNil(t, c.Errors.Last(), tt)
+				assert.NotNil(t, c.Errors.Last())
 			} else {
-				assert.Nil(t, c.Errors.Last(), "err:%+v", c.Errors)
+				assert.Nil(t, c.Errors.Last())
 			}
 
 			if tt.ts != nil {
