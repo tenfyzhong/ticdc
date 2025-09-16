@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/pingcap/errors"
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/logservice/logpuller"
@@ -56,7 +55,7 @@ type ddlJobFetcher struct {
 
 	kvStorage kv.Storage
 
-	keyspaceMeta *keyspacepb.KeyspaceMeta
+	keyspaceID uint32
 
 	ddlTableInfo         *event.DDLTableInfo
 	onceInitddlTableInfo sync.Once
@@ -66,7 +65,7 @@ func newDDLJobFetcher(
 	ctx context.Context,
 	subClient logpuller.SubscriptionClient,
 	kvStorage kv.Storage,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceID uint32,
 	cacheDDLEvent func(ddlEvent DDLJobWithCommitTs),
 	advanceResolvedTs func(resolvedTS uint64),
 ) *ddlJobFetcher {
@@ -76,7 +75,7 @@ func newDDLJobFetcher(
 		cacheDDLEvent:     cacheDDLEvent,
 		advanceResolvedTs: advanceResolvedTs,
 		kvStorage:         kvStorage,
-		keyspaceMeta:      keyspaceMeta,
+		keyspaceID:        keyspaceID,
 	}
 	ddlJobFetcher.resolvedTsTracker.resolvedTsItemMap = make(map[logpuller.SubscriptionID]*resolvedTsItem)
 	ddlJobFetcher.resolvedTsTracker.resolvedTsHeap = heap.NewHeap[*resolvedTsItem]()
@@ -85,7 +84,7 @@ func newDDLJobFetcher(
 }
 
 func (p *ddlJobFetcher) run(startTs uint64) error {
-	spans, err := getAllDDLSpan(p.getKeyspceID())
+	spans, err := getAllDDLSpan(p.keyspaceID)
 	if err != nil {
 		return err
 	}
@@ -163,13 +162,6 @@ func (p *ddlJobFetcher) unmarshalDDL(rawKV *common.RawKVEntry) (*model.Job, erro
 	}
 
 	return event.ParseDDLJob(rawKV, p.ddlTableInfo)
-}
-
-func (p *ddlJobFetcher) getKeyspceID() uint32 {
-	if p.keyspaceMeta == nil {
-		return 0
-	}
-	return p.keyspaceMeta.Id
 }
 
 // getSnapshotMeta returns tidb meta information

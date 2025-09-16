@@ -18,7 +18,6 @@ import (
 	"math"
 	"sync"
 
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/replica"
@@ -78,7 +77,7 @@ type Controller struct {
 	mode                   int64
 	enableSplittableCheck  bool
 
-	keyspaceMeta *keyspacepb.KeyspaceMeta
+	keyspaceID uint32
 }
 
 // NewController creates a new span controller
@@ -87,7 +86,7 @@ func NewController(
 	ddlSpan *replica.SpanReplication,
 	splitter *split.Splitter,
 	schedulerCfg *config.ChangefeedSchedulerConfig,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceID uint32,
 	mode int64,
 ) *Controller {
 	c := &Controller{
@@ -100,7 +99,7 @@ func NewController(
 		mode:                   mode,
 		enableTableAcrossNodes: schedulerCfg != nil && schedulerCfg.EnableTableAcrossNodes,
 		enableSplittableCheck:  schedulerCfg != nil && schedulerCfg.EnableSplittableCheck,
-		keyspaceMeta:           keyspaceMeta,
+		keyspaceID:             keyspaceID,
 	}
 
 	c.reset(c.ddlSpan)
@@ -565,8 +564,5 @@ func (c *Controller) GetAbsentForTest(limit int) []*replica.SpanReplication {
 }
 
 func (c Controller) GetkeyspaceID() uint32 {
-	if c.keyspaceMeta == nil {
-		return 0
-	}
-	return c.keyspaceMeta.Id
+	return c.keyspaceID
 }

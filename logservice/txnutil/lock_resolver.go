@@ -21,7 +21,9 @@ import (
 	"github.com/pingcap/errors"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
 	"github.com/pingcap/log"
-	"github.com/pingcap/tidb/pkg/kv"
+	appcontext "github.com/pingcap/ticdc/pkg/common/context"
+	cerror "github.com/pingcap/ticdc/pkg/errors"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	tikverr "github.com/tikv/client-go/v2/error"
 	"github.com/tikv/client-go/v2/tikv"
 	"github.com/tikv/client-go/v2/tikvrpc"
@@ -34,21 +36,11 @@ type LockResolver interface {
 	Resolve(ctx context.Context, keyspaceID uint32, regionID uint64, maxVersion uint64) error
 }
 
-type KVStorageGetter interface {
-	GetKVStorage(keyspaceID uint32) (kv.Storage, error)
-}
-
-type resolver struct {
-	kvStorageGetter KVStorageGetter
-}
+type resolver struct{}
 
 // NewLockerResolver returns a LockResolver.
-func NewLockerResolver(
-	kvStorageGetter KVStorageGetter,
-) LockResolver {
-	return &resolver{
-		kvStorageGetter: kvStorageGetter,
-	}
+func NewLockerResolver() LockResolver {
+	return &resolver{}
 }
 
 const scanLockLimit = 1024
@@ -78,7 +70,13 @@ func (r *resolver) Resolve(ctx context.Context, keyspaceID uint32, regionID uint
 		Limit:      scanLockLimit,
 	})
 
-	storage, err := r.kvStorageGetter.GetKVStorage(keyspaceID)
+	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
+	keyspaceMeta := keyspaceManager.GetKeyspaceByID(keyspaceID)
+	if keyspaceMeta == nil {
+		return cerror.ErrInvalidKeyspace
+	}
+
+	storage, err := keyspaceManager.GetStorage(keyspaceMeta.Name)
 	if err != nil {
 		return err
 	}

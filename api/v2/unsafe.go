@@ -17,10 +17,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pingcap/ticdc/logservice/schemastore"
 	"github.com/pingcap/ticdc/logservice/txnutil"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	cerror "github.com/pingcap/ticdc/pkg/errors"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/txnutil/gc"
 )
 
@@ -49,24 +49,16 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		return
 	}
 
-	keyspaceMeta, err := h.getKeyspaceMeta(c)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	schemaStore := appcontext.GetService[schemastore.SchemaStore](appcontext.SchemaStore)
-	kvStorage, err := schemaStore.GetKVStorage(keyspaceMeta.Id)
+	keyspaceName := GetKeyspaceValueWithDefault(c)
+
+	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
+	keyspaceMeta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), keyspaceName)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 
-	if kvStorage == nil {
-		c.Status(http.StatusServiceUnavailable)
-		return
-	}
-
-	txnResolver := txnutil.NewLockerResolver(schemaStore)
+	txnResolver := txnutil.NewLockerResolver()
 	if err := txnResolver.Resolve(c, keyspaceMeta.Id, resolveLockReq.RegionID, resolveLockReq.Ts); err != nil {
 		_ = c.Error(err)
 		return

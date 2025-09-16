@@ -20,7 +20,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/logservice/logpuller"
 	"github.com/pingcap/ticdc/pkg/common"
@@ -30,6 +29,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/pdutil"
 	"github.com/pingcap/ticdc/pkg/upstream"
@@ -62,9 +62,7 @@ type SchemaStore interface {
 	FetchTableTriggerDDLEvents(keyspaceID uint32, tableFilter filter.Filter, start uint64, limit int) ([]commonEvent.DDLEvent, uint64, error)
 
 	// RegisterKeyspace register a keyspace to fetch table ddl
-	RegisterKeyspace(ctx context.Context, keyspaceMeta *keyspacepb.KeyspaceMeta) error
-
-	GetKVStorage(keyspaceID uint32) (kv.Storage, error)
+	RegisterKeyspace(ctx context.Context, keyspaceName string) error
 }
 
 type DDLEventState struct {
@@ -262,7 +260,7 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchema
 func (s *schemaStore) initialize(ctx context.Context) {
 	// we should fetch ddl at startup for classic mode
 	if kerneltype.IsClassic() {
-		s.RegisterKeyspace(ctx, nil)
+		s.RegisterKeyspace(ctx, common.DefaultKeyspace)
 	}
 }
 
@@ -417,17 +415,18 @@ func (s *schemaStore) FetchTableTriggerDDLEvents(keyspaceID uint32, tableFilter 
 // For classic mode, the keyspace is nil
 func (s *schemaStore) RegisterKeyspace(
 	ctx context.Context,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceName string,
 ) error {
 	s.keyspaceLocker.Lock()
 	defer s.keyspaceLocker.Unlock()
 
-	keyspaceName := ""
-	keyspaceID := uint32(0)
-	if keyspaceMeta != nil {
-		keyspaceID = keyspaceMeta.Id
-		keyspaceName = keyspaceMeta.Name
+	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
+	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
+	if err != nil {
+		return errors.Trace(err)
 	}
+
+	keyspaceID := keyspaceMeta.Id
 
 	// If the keyspace has already been registered
 	// No need to register again
@@ -435,7 +434,10 @@ func (s *schemaStore) RegisterKeyspace(
 		return nil
 	}
 
-	kvStorage, err := s.createStorage(keyspaceName)
+	kvStorage, err := keyspaceManager.GetStorage(keyspaceName)
+	if err != nil {
+		return errors.Trace(err)
+	}
 	dataStorage := newPersistentStorage(s.root, keyspaceID, s.pdCli, kvStorage)
 	dataStorage.initialize(ctx)
 	schemaStore := &keyspaceSchemaStore{
@@ -461,7 +463,7 @@ func (s *schemaStore) RegisterKeyspace(
 		ctx,
 		subClient,
 		kvStorage,
-		keyspaceMeta,
+		keyspaceID,
 		schemaStore.writeDDLEvent,
 		schemaStore.advancePendingResolvedTs,
 	)
@@ -499,13 +501,4 @@ func (s *schemaStore) createStorage(keyspaceName string) (kv.Storage, error) {
 	}
 
 	return kvStorage, nil
-}
-
-func (s *schemaStore) GetKVStorage(keyspaceID uint32) (kv.Storage, error) {
-	schemaStore, err := s.getKeyspaceSchemaStore(keyspaceID)
-	if err != nil {
-		return nil, err
-	}
-
-	return schemaStore.dataStorage.kvStorage, nil
 }

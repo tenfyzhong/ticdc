@@ -15,10 +15,7 @@ package v2
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/ticdc/api/middleware"
-	"github.com/pingcap/ticdc/pkg/api"
-	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/server"
 )
 
@@ -30,18 +27,6 @@ type OpenAPIV2 struct {
 // NewOpenAPIV2 creates a new OpenAPIV2.
 func NewOpenAPIV2(c server.Server) OpenAPIV2 {
 	return OpenAPIV2{c}
-}
-
-func (h OpenAPIV2) getKeyspaceMeta(c *gin.Context) (*keyspacepb.KeyspaceMeta, error) {
-	obj, exists := c.Get(api.CtxKeyspaceMeta)
-	if !exists {
-		return &keyspacepb.KeyspaceMeta{}, nil
-	}
-	keyspaceMeta, ok := obj.(*keyspacepb.KeyspaceMeta)
-	if !ok {
-		return nil, errors.ErrLoadKeyspaceFailed.GenWithStack("invalid keyspace meta")
-	}
-	return keyspaceMeta, nil
 }
 
 // RegisterOpenAPIV2Routes registers routes for OpenAPI

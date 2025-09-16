@@ -36,6 +36,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/eventservice"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/node"
 	"github.com/pingcap/ticdc/pkg/pdutil"
@@ -153,7 +154,7 @@ func (c *server) initialize(ctx context.Context) error {
 		&logpuller.SubscriptionClientConfig{
 			RegionRequestWorkerPerStore: 8,
 		}, c.pdClient,
-		txnutil.NewLockerResolver(schemaStore),
+		txnutil.NewLockerResolver(),
 		c.security,
 	)
 	eventStore := eventstore.New(ctx, conf.DataDir, subscriptionClient)
@@ -232,6 +233,9 @@ func (c *server) setPreServices(ctx context.Context) error {
 	httpServer := NewHttpServer(c, c.tcpServer.HTTP1Listener())
 	httpServer.Run(ctx)
 	c.preServices = append(c.preServices, httpServer)
+
+	keyspaceManager := keyspace.NewKeyspaceManager(c.pdEndpoints)
+	appctx.SetService(appctx.KeyspaceManager, keyspaceManager)
 
 	log.Info("pre services all set", zap.Any("preServicesNum", len(c.preServices)))
 	return nil

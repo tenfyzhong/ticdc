@@ -24,6 +24,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/common"
+	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/pdutil"
@@ -106,7 +107,7 @@ func CreateTiStore(urls string, credential *security.Credential, keyspaceName st
 	}
 
 	tiPath := fmt.Sprintf("tikv://%s?disableGC=true", urlv.HostString())
-	if keyspaceName != "" {
+	if kerneltype.IsNextGen() && keyspaceName != "" {
 		tiPath += "&keyspaceName=" + keyspaceName
 	}
 	securityCfg := tikvconfig.Security{

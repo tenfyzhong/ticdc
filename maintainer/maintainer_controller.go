@@ -17,7 +17,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/operator"
@@ -66,8 +65,8 @@ type Controller struct {
 	enableTableAcrossNodes bool
 	batchSize              int
 
-	keyspaceMeta *keyspacepb.KeyspaceMeta
-	enableRedo   bool
+	keyspaceID uint32
+	enableRedo bool
 }
 
 func NewController(changefeedID common.ChangeFeedID,
@@ -76,15 +75,10 @@ func NewController(changefeedID common.ChangeFeedID,
 	cfConfig *config.ReplicaConfig,
 	ddlSpan, redoDDLSpan *replica.SpanReplication,
 	batchSize int, balanceInterval time.Duration,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceID uint32,
 	enableRedo bool,
 ) *Controller {
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
-
-	keyspaceID := uint32(0)
-	if keyspaceMeta != nil {
-		keyspaceID = keyspaceMeta.Id
-	}
 
 	enableTableAcrossNodes := false
 	var splitter *split.Splitter
@@ -100,14 +94,14 @@ func NewController(changefeedID common.ChangeFeedID,
 	if cfConfig != nil {
 		schedulerCfg = cfConfig.Scheduler
 	}
-	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg, keyspaceMeta, common.DefaultMode)
+	spanController := span.NewController(changefeedID, ddlSpan, splitter, schedulerCfg, keyspaceID, common.DefaultMode)
 
 	var (
 		redoSpanController *span.Controller
 		redoOC             *operator.Controller
 	)
 	if enableRedo {
-		redoSpanController = span.NewController(changefeedID, redoDDLSpan, splitter, schedulerCfg, keyspaceMeta, common.RedoMode)
+		redoSpanController = span.NewController(changefeedID, redoDDLSpan, splitter, schedulerCfg, keyspaceID, common.RedoMode)
 		redoOC = operator.NewOperatorController(changefeedID, redoSpanController, batchSize)
 	}
 	// Create operator controller using spanController
@@ -133,7 +127,7 @@ func NewController(changefeedID common.ChangeFeedID,
 		enableTableAcrossNodes: enableTableAcrossNodes,
 		batchSize:              batchSize,
 		splitter:               splitter,
-		keyspaceMeta:           keyspaceMeta,
+		keyspaceID:             keyspaceID,
 		enableRedo:             enableRedo,
 	}
 }
@@ -196,10 +190,7 @@ func (c *Controller) Stop() {
 }
 
 func (c *Controller) GetKeyspaceID() uint32 {
-	if c.keyspaceMeta == nil {
-		return 0
-	}
-	return c.keyspaceMeta.Id
+	return c.keyspaceID
 }
 
 // RemoveNode is called when a node is removed

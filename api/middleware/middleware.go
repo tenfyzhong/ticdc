@@ -28,8 +28,8 @@ import (
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/httputil"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/node"
-	"github.com/pingcap/ticdc/pkg/pdutil"
 	"github.com/pingcap/ticdc/pkg/server"
 	"go.uber.org/zap"
 )
@@ -232,16 +232,15 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		keyspace := c.Query(api.APIOpVarKeyspace)
-		if keyspace == "" {
+		ks := c.Query(api.APIOpVarKeyspace)
+		if ks == "" {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
 			return
 		}
 
-		pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
-
-		meta, err := pdAPIClient.LoadKeyspace(c.Request.Context(), keyspace)
+		keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
+		meta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
 		if errors.IsKeyspaceNotExistError(err) {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()

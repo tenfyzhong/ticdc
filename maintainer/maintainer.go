@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/maintainer/replica"
@@ -167,15 +166,10 @@ func NewMaintainer(cfID common.ChangeFeedID,
 	taskScheduler threadpool.ThreadPool,
 	checkpointTs uint64,
 	newChangefeed bool,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceID uint32,
 ) *Maintainer {
 	mc := appcontext.GetService[messaging.MessageCenter](appcontext.MessageCenter)
 	nodeManager := appcontext.GetService[*watcher.NodeManager](watcher.NodeManagerName)
-
-	keyspaceID := uint32(0)
-	if keyspaceMeta != nil {
-		keyspaceID = keyspaceMeta.Id
-	}
 
 	tableTriggerEventDispatcherID, ddlSpan := newDDLSpan(keyspaceID, cfID, checkpointTs, selfNode, common.DefaultMode)
 	var redoDDLSpan *replica.SpanReplication
@@ -189,7 +183,7 @@ func NewMaintainer(cfID common.ChangeFeedID,
 		eventCh:           chann.NewAutoDrainChann[*Event](),
 		startCheckpointTs: checkpointTs,
 		controller: NewController(cfID, checkpointTs, taskScheduler,
-			cfg.Config, ddlSpan, redoDDLSpan, conf.AddTableBatchSize, time.Duration(conf.CheckBalanceInterval), keyspaceMeta, enableRedo),
+			cfg.Config, ddlSpan, redoDDLSpan, conf.AddTableBatchSize, time.Duration(conf.CheckBalanceInterval), keyspaceID, enableRedo),
 		mc:                    mc,
 		removed:               atomic.NewBool(false),
 		nodeManager:           nodeManager,
@@ -261,14 +255,14 @@ func NewMaintainerForRemove(cfID common.ChangeFeedID,
 	conf *config.SchedulerConfig,
 	selfNode *node.Info,
 	taskScheduler threadpool.ThreadPool,
-	keyspaceMeta *keyspacepb.KeyspaceMeta,
+	keyspaceID uint32,
 ) *Maintainer {
 	unused := &config.ChangeFeedInfo{
 		ChangefeedID: cfID,
 		SinkURI:      "",
 		Config:       config.GetDefaultReplicaConfig(),
 	}
-	m := NewMaintainer(cfID, conf, unused, selfNode, taskScheduler, 1, false, keyspaceMeta)
+	m := NewMaintainer(cfID, conf, unused, selfNode, taskScheduler, 1, false, keyspaceID)
 	m.cascadeRemoving.Store(true)
 	return m
 }
