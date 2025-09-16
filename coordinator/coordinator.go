@@ -471,7 +471,7 @@ func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, barrierMap ma
 	}
 
 	barrierTsUpperBound := barrierTS - 1
-	err = c.gcManager.TryUpdateKeypsaceGCBarrier(ctx, keyspaceID, keyspaceName, barrierTsUpperBound, false)
+	err = c.gcManager.TryUpdateKeyspaceGCBarrier(ctx, keyspaceID, keyspaceName, barrierTsUpperBound, false)
 	return errors.Trace(err)
 }
 

@@ -41,8 +41,8 @@ type Manager interface {
 	// Set `forceUpdate` to force Manager update.
 	TryUpdateGCSafePoint(ctx context.Context, checkpointTs common.Ts, forceUpdate bool) error
 	CheckStaleCheckpointTs(ctx context.Context, changefeedID common.ChangeFeedID, checkpointTs common.Ts) error
-	// TryUpdateKeypsaceGCBarrier tries to update gc barrier of a keyspace
-	TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error
+	// TryUpdateKeyspaceGCBarrier tries to update gc barrier of a keyspace
+	TryUpdateKeyspaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error
 }
 
 // keyspaceGCBarrierInfo is the gc info for a keyspace
@@ -165,7 +165,7 @@ func (m *gcManager) CheckStaleCheckpointTs(
 	return nil
 }
 
-func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error {
+func (m *gcManager) TryUpdateKeyspaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error {
 	var lastUpdatedTime time.Time
 	if lastUpdatedTimeResult, ok := m.keyspaceGCBarrierInfoMap.Load(keyspaceID); ok {
 		lastUpdatedTime = lastUpdatedTimeResult.(time.Time)
