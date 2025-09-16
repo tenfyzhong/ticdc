@@ -29,6 +29,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/filter"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/messaging/proto"
 	"github.com/pingcap/ticdc/pkg/node"
@@ -60,6 +61,8 @@ func TestMaintainerSchedulesNodeChanges(t *testing.T) {
 	}
 	mockPDClock := pdutil.NewClock4Test()
 	appcontext.SetService(appcontext.DefaultPDClock, mockPDClock)
+	keyspaceManager := keyspace.NewKeyspaceManager([]string{"127.0.0.1:2379"})
+	appcontext.SetService(appcontext.KeyspaceManager, keyspaceManager)
 
 	appcontext.SetService(appcontext.SchemaStore, store)
 	mc := messaging.NewMessageCenter(ctx, selfNode.ID, config.NewDefaultMessageCenterConfig(selfNode.AdvertiseAddr), nil)
