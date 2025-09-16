@@ -32,7 +32,7 @@ func NewOpenAPIV2(c server.Server) OpenAPIV2 {
 	return OpenAPIV2{c}
 }
 
-func (h OpenAPIV2) GetKeyspaceMeta(c *gin.Context) (*keyspacepb.KeyspaceMeta, error) {
+func (h OpenAPIV2) getKeyspaceMeta(c *gin.Context) (*keyspacepb.KeyspaceMeta, error) {
 	obj, exists := c.Get(api.CtxKeyspaceMeta)
 	if !exists {
 		return &keyspacepb.KeyspaceMeta{}, nil

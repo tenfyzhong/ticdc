@@ -49,7 +49,7 @@ func (h *OpenAPIV2) ResolveLock(c *gin.Context) {
 		return
 	}
 
-	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	keyspaceMeta, err := h.getKeyspaceMeta(c)
 	if err != nil {
 		_ = c.Error(err)
 		return

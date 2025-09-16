@@ -101,7 +101,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		return
 	}
 
-	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	keyspaceMeta, err := h.getKeyspaceMeta(c)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -677,7 +677,7 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	})
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
 
-	keyspaceMeta, err := h.GetKeyspaceMeta(c)
+	keyspaceMeta, err := h.getKeyspaceMeta(c)
 	if err != nil {
 		_ = c.Error(err)
 		return
