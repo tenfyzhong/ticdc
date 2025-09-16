@@ -23,9 +23,9 @@ import (
 	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/api"
-	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
+	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/httputil"
 	"github.com/pingcap/ticdc/pkg/node"
@@ -223,30 +223,42 @@ func ForwardToServer(c *gin.Context, fromID node.ID, toAddr string) {
 // KeyspaceCheckerMiddleware check if the request keyspace is valid
 func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		keyspace := c.Query(api.APIOpVarKeyspace)
-		if keyspace != "" && keyspace != common.DefaultKeyspace {
-			pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
-
-			meta, err := pdAPIClient.LoadKeyspace(c.Request.Context(), keyspace)
-			if errors.IsKeyspaceNotExistError(err) {
-				c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
-				c.Abort()
-				return
-			} else if err != nil {
-				c.IndentedJSON(http.StatusInternalServerError, api.NewHTTPError(err))
-				c.Abort()
-				return
-			}
-
-			if meta.State != keyspacepb.KeyspaceState_ENABLED {
-				c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
-				c.Abort()
-				return
-			}
-
-			c.Set(api.CtxKeyspaceMeta, meta)
+		// we not need to check keyspace for classic mode
+		// if the classic mode supports multiple keyspaces in future
+		// we need to remove this if block
+		if kerneltype.IsClassic() {
+			c.Set(api.CtxKeyspaceMeta, &keyspacepb.KeyspaceMeta{})
+			c.Next()
+			return
 		}
 
+		keyspace := c.Query(api.APIOpVarKeyspace)
+		if keyspace == "" {
+			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+			c.Abort()
+			return
+		}
+
+		pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
+
+		meta, err := pdAPIClient.LoadKeyspace(c.Request.Context(), keyspace)
+		if errors.IsKeyspaceNotExistError(err) {
+			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+			c.Abort()
+			return
+		} else if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, api.NewHTTPError(err))
+			c.Abort()
+			return
+		}
+
+		if meta.State != keyspacepb.KeyspaceState_ENABLED {
+			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+			c.Abort()
+			return
+		}
+
+		c.Set(api.CtxKeyspaceMeta, meta)
 		c.Next()
 	}
 }
