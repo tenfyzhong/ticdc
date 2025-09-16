@@ -109,7 +109,7 @@ func TestBalanceGroupsNewNodeAdd_SplitsTableMoreThanNodeNum(t *testing.T) {
 	nodeID := node.ID("node1")
 	for i := 0; i < 100; i++ {
 		// generate 100 groups
-		totalSpan := common.TableIDToComparableSpan(0, int64(i))
+		totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		for j := 0; j < 4; j++ {
 			span := &heartbeatpb.TableSpan{TableID: int64(i), StartKey: appendNew(totalSpan.StartKey, byte('a'+j)), EndKey: appendNew(totalSpan.StartKey, byte('b'+j))}
 			dispatcherID := common.NewDispatcherID()
@@ -211,7 +211,7 @@ func TestBalanceGroupsNewNodeAdd_SplitsTableLessThanNodeNum(t *testing.T) {
 	nodeIDList := []node.ID{"node1", "node2"}
 	for i := 0; i < 100; i++ {
 		// generate 100 groups
-		totalSpan := common.TableIDToComparableSpan(0, int64(i))
+		totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		for j := 0; j < 2; j++ {
 			span := &heartbeatpb.TableSpan{TableID: int64(i), StartKey: appendNew(totalSpan.StartKey, byte('a'+j)), EndKey: appendNew(totalSpan.StartKey, byte('b'+j))}
 			dispatcherID := common.NewDispatcherID()
@@ -327,7 +327,7 @@ func TestSplitBalanceGroupsWithNodeRemove(t *testing.T) {
 	nodeIDList := []node.ID{"node1", "node2", "node3"}
 	for i := 0; i < 100; i++ {
 		// generate 100 groups
-		totalSpan := common.TableIDToComparableSpan(0, int64(i))
+		totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		for j := 0; j < 6; j++ {
 			span := &heartbeatpb.TableSpan{TableID: int64(i), StartKey: appendNew(totalSpan.StartKey, byte('a'+j)), EndKey: appendNew(totalSpan.StartKey, byte('b'+j))}
 			dispatcherID := common.NewDispatcherID()
@@ -425,7 +425,7 @@ func TestSplitTableBalanceWhenTrafficUnbalanced(t *testing.T) {
 	// make a group
 	regionCache := appcontext.GetService[*testutil.MockCache](appcontext.RegionCache)
 	pdAPIClient := appcontext.GetService[*testutil.MockPDAPIClient](appcontext.PDAPIClient)
-	totalSpan := common.TableIDToComparableSpan(0, int64(1))
+	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(1))
 
 	spanLists := make([]*replica.SpanReplication, 6)
 	// span1
@@ -1006,7 +1006,7 @@ func TestBalance(t *testing.T) {
 		}, "node1")
 	s := NewController(cfID, 1, nil, nil, ddlSpan, nil, 1000, 0, nil, false)
 	for i := 0; i < 100; i++ {
-		sz := common.TableIDToComparableSpan(0, int64(i))
+		sz := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		span := &heartbeatpb.TableSpan{TableID: sz.TableID, StartKey: sz.StartKey, EndKey: sz.EndKey}
 		dispatcherID := common.NewDispatcherID()
 		spanReplica := replica.NewSpanReplication(cfID, dispatcherID, 1, span, 1, common.DefaultMode)
@@ -1081,7 +1081,7 @@ func TestDefaultSpanIntoSplit(t *testing.T) {
 			SchedulingTaskCountPerNode: 10,
 		},
 	}, ddlSpan, nil, 1000, 0, nil, false)
-	totalSpan := common.TableIDToComparableSpan(0, 1)
+	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
 	span := &heartbeatpb.TableSpan{TableID: int64(1), StartKey: totalSpan.StartKey, EndKey: totalSpan.EndKey}
 	dispatcherID := common.NewDispatcherID()
 	spanReplica := replica.NewSpanReplication(cfID, dispatcherID, 1, span, 1, common.DefaultMode)
@@ -1223,7 +1223,7 @@ func TestStoppedWhenMoving(t *testing.T) {
 		}, "node1")
 	s := NewController(cfID, 1, nil, nil, ddlSpan, nil, 1000, 0, nil, false)
 	for i := 0; i < 2; i++ {
-		sz := common.TableIDToComparableSpan(0, int64(i))
+		sz := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		span := &heartbeatpb.TableSpan{TableID: sz.TableID, StartKey: sz.StartKey, EndKey: sz.EndKey}
 		dispatcherID := common.NewDispatcherID()
 		spanReplica := replica.NewSpanReplication(cfID, dispatcherID, 1, span, 1, common.DefaultMode)
@@ -1266,7 +1266,7 @@ func TestFinishBootstrap(t *testing.T) {
 		}, "node1")
 	s := NewController(cfID, 1, &mockThreadPool{},
 		config.GetDefaultReplicaConfig(), ddlSpan, nil, 1000, 0, nil, false)
-	totalSpan := common.TableIDToComparableSpan(0, 1)
+	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
 	span := &heartbeatpb.TableSpan{TableID: int64(1), StartKey: totalSpan.StartKey, EndKey: totalSpan.EndKey}
 	schemaStore := &mockSchemaStore{
 		tables: []commonEvent.Table{
@@ -1348,8 +1348,8 @@ func TestSplitTableWhenBootstrapFinished(t *testing.T) {
 	}}
 	appcontext.SetService(appcontext.SchemaStore, schemaStore)
 
-	totalSpan := common.TableIDToComparableSpan(0, 1)
-	totalSpan2 := common.TableIDToComparableSpan(0, 2)
+	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
+	totalSpan2 := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 2)
 
 	regionCache := appcontext.GetService[*testutil.MockCache](appcontext.RegionCache)
 	regionCache.SetRegions(fmt.Sprintf("%s-%s", totalSpan2.StartKey, totalSpan2.EndKey), []*tikv.Region{
@@ -1516,7 +1516,7 @@ func TestLargeTableInitialization(t *testing.T) {
 	}, ddlSpan, nil, 1000, 0, nil, false)
 
 	// Create a large table with 10000 regions
-	totalSpan := common.TableIDToComparableSpan(0, int64(1))
+	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(1))
 	// Mock 100 regions for the large table
 	regionCache := appcontext.GetService[*testutil.MockCache](appcontext.RegionCache)
 	regions := make([]*tikv.Region, 100)

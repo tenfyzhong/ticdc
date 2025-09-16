@@ -1566,7 +1566,7 @@ func (s *schemaStoreWithErr) GetTableInfo(keyspaceID uint32, tableID common.Tabl
 	if s.getTableInfoError != nil {
 		return nil, s.getTableInfoError
 	}
-	return s.mockSchemaStore.GetTableInfo(0, tableID, ts)
+	return s.mockSchemaStore.GetTableInfo(common.DefaultKeyspaceID, tableID, ts)
 }
 
 func TestGetTableInfo4Txn(t *testing.T) {

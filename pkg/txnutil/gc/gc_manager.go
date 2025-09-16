@@ -197,12 +197,6 @@ func (m *gcManager) TryUpdateKeypsaceGCBarrier(ctx context.Context, keyspaceID u
 		actual = uint64(val.(int))
 	})
 
-	log.Debug("update gc barrier",
-		zap.String("gcServiceID", m.gcServiceID),
-		zap.Uint32("keyspaceID", keyspaceID),
-		zap.Uint64("checkpointTs", checkpointTs),
-		zap.Uint64("actual", actual))
-
 	if actual == checkpointTs {
 		log.Info("update gc barrier success", zap.Uint64("gcBarrierTs", checkpointTs))
 	} else if actual > checkpointTs {

@@ -295,7 +295,7 @@ func TestMaintainerBootstrapWithTablesReported(t *testing.T) {
 	// table1 and table 2 will be reported by remote
 	var remotedIds []common.DispatcherID
 	for i := 1; i < 3; i++ {
-		span := common.TableIDToComparableSpan(0, int64(i))
+		span := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		tableSpan := &heartbeatpb.TableSpan{
 			TableID:  int64(i),
 			StartKey: span.StartKey,

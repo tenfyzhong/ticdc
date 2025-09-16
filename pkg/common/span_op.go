@@ -55,7 +55,7 @@ func TableIDToComparableSpan(keyspaceID uint32, tableID int64) heartbeatpb.Table
 // TableIDToComparableRange returns a range of a table,
 // start and end are encoded in Comparable format.
 func TableIDToComparableRange(tableID int64) (start, end heartbeatpb.TableSpan) {
-	tableSpan := TableIDToComparableSpan(0, tableID)
+	tableSpan := TableIDToComparableSpan(DefaultKeyspaceID, tableID)
 	start = tableSpan
 	start.EndKey = nil
 	end = tableSpan

@@ -44,7 +44,7 @@ func TestNewSplitter(t *testing.T) {
 		WriteKeyThreshold:  1000,
 	}
 
-	splitter := NewSplitter(0, cfID, cfg)
+	splitter := NewSplitter(common.DefaultKeyspaceID, cfID, cfg)
 
 	re.NotNil(splitter)
 	re.Equal(cfID, splitter.changefeedID)
