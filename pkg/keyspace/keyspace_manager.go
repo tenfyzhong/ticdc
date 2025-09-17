@@ -26,6 +26,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/pdutil"
+	"github.com/pingcap/ticdc/pkg/retry"
 	"github.com/pingcap/ticdc/pkg/upstream"
 	"github.com/pingcap/tidb/pkg/kv"
 	"go.uber.org/zap"
@@ -68,15 +69,22 @@ func (k *keyspaceManager) LoadKeyspace(ctx context.Context, keyspace string) (*k
 
 	k.keyspaceMu.Lock()
 	defer k.keyspaceMu.Unlock()
-
-	if meta := k.keyspaceMap[keyspace]; meta != nil {
+	meta := k.keyspaceMap[keyspace]
+	if meta != nil {
 		return meta, nil
 	}
 
-	// TODO tenfyzhong 2025-09-17 10:12:02  retry
+	var err error
 	pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
-	meta, err := pdAPIClient.LoadKeyspace(ctx, keyspace)
+	err = retry.Do(ctx, func() error {
+		meta, err = pdAPIClient.LoadKeyspace(ctx, keyspace)
+		if err != nil {
+			return err
+		}
+		return nil
+	}, retry.WithBackoffBaseDelay(500), retry.WithBackoffMaxDelay(1000), retry.WithMaxTries(6))
 	if err != nil {
+		log.Error("retry to load keyspace from pd", zap.String("keyspace", keyspace), zap.Error(err))
 		return nil, errors.Trace(err)
 	}
 
