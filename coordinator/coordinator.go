@@ -462,7 +462,7 @@ func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, barrierMap ma
 	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
 	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
 	if err != nil {
-		return cerror.ErrLoadKeyspaceFailed.Wrap(err)
+		return cerror.WrapError(cerror.ErrLoadKeyspaceFailed, err)
 	}
 	keyspaceID := keyspaceMeta.Id
 
