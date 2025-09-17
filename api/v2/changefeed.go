@@ -31,7 +31,6 @@ import (
 	"github.com/pingcap/ticdc/downstreamadapter/sink/eventrouter"
 	"github.com/pingcap/ticdc/logservice/schemastore"
 	"github.com/pingcap/ticdc/pkg/api"
-	"github.com/pingcap/ticdc/pkg/apperror"
 	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
@@ -783,7 +782,7 @@ func (h *OpenAPIV2) MoveTable(c *gin.Context) {
 
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("Name", changefeedID.DisplayName.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 
@@ -858,7 +857,7 @@ func (h *OpenAPIV2) MoveSplitTable(c *gin.Context) {
 
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("Name", changefeedID.DisplayName.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 
@@ -932,7 +931,7 @@ func (h *OpenAPIV2) SplitTableByRegionCount(c *gin.Context) {
 
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("Name", changefeedID.DisplayName.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 	mode, _ := strconv.ParseInt(c.Query("mode"), 10, 64)
@@ -1003,7 +1002,7 @@ func (h *OpenAPIV2) MergeTable(c *gin.Context) {
 
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("Name", changefeedID.DisplayName.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 
@@ -1063,7 +1062,7 @@ func (h *OpenAPIV2) ListTables(c *gin.Context) {
 	maintainer, ok := maintainerManager.GetMaintainerForChangefeed(changefeedID)
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("Name", changefeedID.DisplayName.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 
@@ -1134,7 +1133,7 @@ func (h *OpenAPIV2) getDispatcherCount(c *gin.Context) {
 
 	if !ok {
 		log.Error("maintainer not found for changefeed in this node", zap.String("GID", changefeedID.Id.String()), zap.String("changefeed", changefeedID.String()))
-		_ = c.Error(apperror.ErrMaintainerNotFounded)
+		_ = c.Error(errors.ErrMaintainerNotFounded)
 		return
 	}
 
