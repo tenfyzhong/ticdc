@@ -227,7 +227,6 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 		// if the classic mode supports multiple keyspaces in future
 		// we need to remove this if block
 		if kerneltype.IsClassic() {
-			c.Set(api.CtxKeyspaceMeta, &keyspacepb.KeyspaceMeta{})
 			c.Next()
 			return
 		}
@@ -257,7 +256,6 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set(api.CtxKeyspaceMeta, meta)
 		c.Next()
 	}
 }
