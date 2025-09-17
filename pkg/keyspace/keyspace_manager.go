@@ -35,6 +35,7 @@ type KeyspaceManager interface {
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
 	GetKeyspaceByID(keyspaceID uint32) *keyspacepb.KeyspaceMeta
 	GetStorage(keyspace string) (kv.Storage, error)
+	Close()
 }
 
 func NewKeyspaceManager(pdEndpoints []string) KeyspaceManager {

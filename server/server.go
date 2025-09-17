@@ -236,6 +236,7 @@ func (c *server) setPreServices(ctx context.Context) error {
 
 	keyspaceManager := keyspace.NewKeyspaceManager(c.pdEndpoints)
 	appctx.SetService(appctx.KeyspaceManager, keyspaceManager)
+	c.preServices = append(c.preServices, keyspaceManager)
 
 	log.Info("pre services all set", zap.Any("preServicesNum", len(c.preServices)))
 	return nil
