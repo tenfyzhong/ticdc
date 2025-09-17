@@ -15,7 +15,6 @@ package schemastore
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,15 +24,12 @@ import (
 	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
-	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/filter"
 	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/pdutil"
-	"github.com/pingcap/ticdc/pkg/upstream"
-	"github.com/pingcap/tidb/pkg/kv"
 	"github.com/tikv/client-go/v2/oracle"
 	pd "github.com/tikv/pd/client"
 	"go.uber.org/zap"
@@ -491,14 +487,4 @@ func (s *schemaStore) RegisterKeyspace(
 	s.keyspaceSchemaStoreMap[keyspaceID] = schemaStore
 
 	return nil
-}
-
-func (s *schemaStore) createStorage(keyspaceName string) (kv.Storage, error) {
-	conf := config.GetGlobalServerConfig()
-	kvStorage, err := upstream.CreateTiStore(strings.Join(s.pdEndpoints, ","), conf.Security, keyspaceName)
-	if err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	return kvStorage, nil
 }
