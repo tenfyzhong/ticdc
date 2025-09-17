@@ -73,6 +73,7 @@ func (k *keyspaceManager) LoadKeyspace(ctx context.Context, keyspace string) (*k
 		return meta, nil
 	}
 
+	// TODO tenfyzhong 2025-09-17 10:12:02  retry
 	pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
 	meta, err := pdAPIClient.LoadKeyspace(ctx, keyspace)
 	if err != nil {
