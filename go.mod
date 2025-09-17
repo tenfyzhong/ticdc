@@ -54,7 +54,7 @@ require (
 	github.com/pingcap/tidb v1.1.0-beta.0.20250901173104-9695b09e847c
 	github.com/pingcap/tidb-dashboard v0.0.0-20240326110213-9768844ff5d7
 	github.com/pingcap/tidb/pkg/parser v0.0.0-20250901065358-9bcae5eff736
-	github.com/pingcap/tiflow v0.0.0-20250826025010-33ea0edd95ce
+	github.com/pingcap/tiflow v0.0.0-20250917061332-73bb84070d16
 	github.com/prometheus/client_golang v1.22.0
 	github.com/r3labs/diff v1.1.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
@@ -369,6 +369,3 @@ require (
 replace github.com/go-ldap/ldap/v3 v3.4.4 => github.com/yangkeao/ldap/v3 v3.4.5-0.20230421065457-369a3bab1117
 
 replace github.com/IBM/sarama v1.41.2 => github.com/pingcap/sarama v1.41.2-pingcap-20250416
-
-// DO-NOT-MERGE tenfyzhong 2025-09-02 10:28:03 remove this replace before merge to master
-replace github.com/pingcap/tiflow => github.com/tenfyzhong/tiflow v0.0.0-20250902015837-94c9f6372559
