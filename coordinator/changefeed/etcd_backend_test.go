@@ -354,18 +354,10 @@ func TestExtractKeySuffix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotKs, gotCf, gotIsStatus, gotIsChangefeed := extractKeySuffix(tt.args.key)
-			if gotKs != tt.wantKs {
-				t.Errorf("extractKeySuffix() gotKs = %v, want %v", gotKs, tt.wantKs)
-			}
-			if gotCf != tt.wantCf {
-				t.Errorf("extractKeySuffix() gotCf = %v, want %v", gotCf, tt.wantCf)
-			}
-			if gotIsStatus != tt.wantIsStatus {
-				t.Errorf("extractKeySuffix() gotIsStatus = %v, want %v", gotIsStatus, tt.wantIsStatus)
-			}
-			if gotIsChangefeed != tt.wantIsChangefeed {
-				t.Errorf("extractKeySuffix() gotIsChangefeed = %v, want %v", gotIsChangefeed, tt.wantIsChangefeed)
-			}
+			require.Equal(t, tt.wantKs, gotKs)
+			require.Equal(t, tt.wantCf, gotCf)
+			require.Equal(t, tt.wantIsStatus, gotIsStatus)
+			require.Equal(t, tt.wantIsChangefeed, gotIsChangefeed)
 		})
 	}
 }
