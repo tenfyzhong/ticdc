@@ -48,6 +48,8 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 	allDataPrefix := etcd.BaseKey(b.etcdClient.GetClusterID())
 
 	resp, err := b.etcdClient.GetEtcdClient().Get(ctx, allDataPrefix, clientv3.WithPrefix())
+	// TODO tenfyzhong 2025-09-18 16:52:39 remove log
+	log.Info("get feeds from etcd", zap.String("allDataPrefix", allDataPrefix), zap.Any("resp", resp))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
