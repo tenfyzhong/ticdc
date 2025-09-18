@@ -458,6 +458,7 @@ func (c *Controller) FinishBootstrap(runningChangefeeds map[common.ChangeFeedID]
 		if err != nil {
 			log.Error("RegisterKeyspace failed", zap.String("keyspace", id.Keyspace()), zap.Error(err))
 		}
+		registeredKeyspace[id.Keyspace()] = struct{}{}
 	}
 
 	log.Info("load all changefeeds", zap.Int("size", len(allChangefeeds)))
