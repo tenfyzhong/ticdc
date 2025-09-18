@@ -366,16 +366,21 @@ func (b *EtcdBackend) UpdateChangefeedCheckpointTs(ctx context.Context, cps map[
 // "6a6c6dd290bc8732" from /tidb/cdc/cluster/keyspace/changefeed/info/6a6c6dd290bc8732
 // or from /tidb/cdc/cluster/keyspace/changefeed/status/6a6c6dd290bc8732
 func extractKeySuffix(key string) (ks string, cf string, isStatus bool, isChangefeed bool) {
-	const keyspaceIndex = 3
-	const changefeedItemIndex = 4
-	const statusIndex = 5
-	const changefeedIDIndex = 6
+	const keyspaceIndex = 4
+	const changefeedItemIndex = 5
+	const statusIndex = 6
+	const changefeedIDIndex = 7
 
 	subs := strings.Split(key, "/")
 	if len(subs) <= changefeedItemIndex || subs[changefeedItemIndex] != "changefeed" {
 		isChangefeed = false
 		return ks, cf, isStatus, isChangefeed
 	}
+	if len(subs) <= changefeedIDIndex {
+		isChangefeed = false
+		return ks, cf, isStatus, isChangefeed
+	}
+
 	ks = subs[keyspaceIndex]
 	cf = subs[changefeedIDIndex]
 	isStatus = subs[statusIndex] == "status"
