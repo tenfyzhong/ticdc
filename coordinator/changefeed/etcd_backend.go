@@ -69,6 +69,7 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 					zap.String("key", key), zap.Error(err))
 				continue
 			}
+			log.Info("load changefeed status", zap.String("key", key), zap.Any("status", status))
 			statusMap[common.NewChangeFeedDisplayName(cf, ks)] = status
 		} else {
 			detail := &config.ChangeFeedInfo{}
@@ -78,6 +79,7 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 					zap.String("key", key), zap.Error(err))
 				continue
 			}
+			log.Info("load changefeed info", zap.String("key", key), zap.Any("info", detail))
 			// we can not load the changefeed name from the value, it must an old version info
 			if detail.ChangefeedID.Name() == "" {
 				log.Warn("load a old version change feed Info, migrate it to new version",
