@@ -48,8 +48,6 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 	allDataPrefix := etcd.BaseKey(b.etcdClient.GetClusterID())
 
 	resp, err := b.etcdClient.GetEtcdClient().Get(ctx, allDataPrefix, clientv3.WithPrefix())
-	// TODO tenfyzhong 2025-09-18 16:52:39 remove log
-	log.Info("get feeds from etcd", zap.String("allDataPrefix", allDataPrefix), zap.Any("resp", resp))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -71,7 +69,6 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 					zap.String("key", key), zap.Error(err))
 				continue
 			}
-			log.Info("load changefeed status", zap.String("key", key), zap.Any("status", status))
 			statusMap[common.NewChangeFeedDisplayName(cf, ks)] = status
 		} else {
 			detail := &config.ChangeFeedInfo{}
@@ -81,7 +78,6 @@ func (b *EtcdBackend) GetAllChangefeeds(ctx context.Context) (map[common.ChangeF
 					zap.String("key", key), zap.Error(err))
 				continue
 			}
-			log.Info("load changefeed info", zap.String("key", key), zap.Any("info", detail))
 			// we can not load the changefeed name from the value, it must an old version info
 			if detail.ChangefeedID.Name() == "" {
 				log.Warn("load a old version change feed Info, migrate it to new version",
