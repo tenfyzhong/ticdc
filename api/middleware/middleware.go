@@ -23,6 +23,7 @@ import (
 	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/api"
+	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
@@ -233,6 +234,13 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 
 		ks := c.Query(api.APIOpVarKeyspace)
 		if ks == "" {
+			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+			c.Abort()
+			return
+		}
+
+		// verify changefeed keyspace
+		if err := common.ValidateKeyspace(ks); err != nil {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
 			return

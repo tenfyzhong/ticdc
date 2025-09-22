@@ -94,13 +94,6 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	// We use the keyspace in the query parameter
 	cfg.Keyspace = keyspaceName
 
-	// verify changefeed keyspace
-	if err := common.ValidateKeyspace(changefeedID.Keyspace()); err != nil {
-		_ = c.Error(errors.ErrAPIInvalidParam.GenWithStack(
-			"invalid keyspace: %s", cfg.ID))
-		return
-	}
-
 	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
 
 	co, err := h.server.GetCoordinator()
