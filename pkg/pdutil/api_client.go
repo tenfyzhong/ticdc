@@ -125,7 +125,7 @@ func NewPDAPIClient(pdClient pd.Client, conf *security.Credential) (PDAPIClient,
 
 	pdHttpClient, err := newPdHttpClient(pdClient, conf)
 	if err != nil {
-		return nil, errors.Trace(err)
+		return nil, err
 	}
 
 	return &pdAPIClient{
@@ -141,7 +141,7 @@ func newPdHttpClient(pdClient pd.Client, conf *security.Credential) (pdhttp.Clie
 
 	tlsConf, err := conf.ToTLSConfigWithVerify()
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
 	if tlsConf != nil {
