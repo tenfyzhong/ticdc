@@ -254,9 +254,8 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchema
 
 	ctx := context.Background()
 
-	// if the schemastore does not contain the keyspace, it means the current
-	// cdc node is a follower node. It should register the keyspace when it try
-	// to get keyspace schema_store
+	// If the schemastore does not contain the keyspace, it means it is not a maintainer node.
+	// It should register the keyspace when it try to get keyspace schema_store.
 	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
 	keyspaceMeta, err := keyspaceManager.GetKeyspaceByID(ctx, keyspaceID)
 	if err != nil {
