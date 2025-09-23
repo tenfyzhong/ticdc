@@ -68,8 +68,8 @@ func (k *keyspaceManager) LoadKeyspace(ctx context.Context, keyspace string) (*k
 	}
 
 	k.keyspaceMu.Lock()
-	defer k.keyspaceMu.Unlock()
 	meta := k.keyspaceMap[keyspace]
+	k.keyspaceMu.Unlock()
 	if meta != nil {
 		return meta, nil
 	}
@@ -88,6 +88,13 @@ func (k *keyspaceManager) LoadKeyspace(ctx context.Context, keyspace string) (*k
 		return nil, errors.Trace(err)
 	}
 
+	k.keyspaceMu.Lock()
+	defer k.keyspaceMu.Unlock()
+	// Double check, another goroutine might have fetched and stored it.
+	if meta, ok := k.keyspaceMap[keyspace]; ok {
+		return meta, nil
+	}
+
 	k.keyspaceMap[keyspace] = meta
 	k.keyspaceIDMap[meta.Id] = meta
 
@@ -102,8 +109,8 @@ func (k *keyspaceManager) GetKeyspaceByID(ctx context.Context, keyspaceID uint32
 	}
 
 	k.keyspaceMu.Lock()
-	defer k.keyspaceMu.Unlock()
 	meta := k.keyspaceIDMap[keyspaceID]
+	k.keyspaceMu.Unlock()
 	if meta != nil {
 		return meta, nil
 	}
@@ -117,6 +124,17 @@ func (k *keyspaceManager) GetKeyspaceByID(ctx context.Context, keyspaceID uint32
 		}
 		return nil
 	}, retry.WithBackoffBaseDelay(500), retry.WithBackoffMaxDelay(1000), retry.WithMaxTries(6))
+	if err != nil {
+		log.Error("retry to load keyspace from pd", zap.Uint32("keyspaceID", keyspaceID), zap.Error(err))
+		return nil, errors.Trace(err)
+	}
+
+	k.keyspaceMu.Lock()
+	defer k.keyspaceMu.Unlock()
+	// Double check, another goroutine might have fetched and stored it.
+	if meta, ok := k.keyspaceIDMap[keyspaceID]; ok {
+		return meta, nil
+	}
 
 	k.keyspaceMap[meta.Name] = meta
 	k.keyspaceIDMap[keyspaceID] = meta
