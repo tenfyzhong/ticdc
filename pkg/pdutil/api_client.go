@@ -123,6 +123,19 @@ func NewPDAPIClient(pdClient pd.Client, conf *security.Credential) (PDAPIClient,
 		return nil, errors.Trace(err)
 	}
 
+	pdHttpClient, err := newPdHttpClient(pdClient, conf)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return &pdAPIClient{
+		grpcClient:   pdClient,
+		httpClient:   dialClient,
+		pdHttpClient: pdHttpClient,
+	}, nil
+}
+
+func newPdHttpClient(pdClient pd.Client, conf *security.Credential) (pdhttp.Client, error) {
 	discovery := pdClient.GetServiceDiscovery()
 	pdhttpOpts := make([]pdhttp.ClientOption, 0)
 
@@ -136,11 +149,8 @@ func NewPDAPIClient(pdClient pd.Client, conf *security.Credential) (PDAPIClient,
 		pdhttpOpts = append(pdhttpOpts, opt)
 	}
 
-	return &pdAPIClient{
-		grpcClient:   pdClient,
-		httpClient:   dialClient,
-		pdHttpClient: pdhttp.NewClientWithServiceDiscovery("cdc", discovery, pdhttpOpts...),
-	}, nil
+	client := pdhttp.NewClientWithServiceDiscovery("cdc", discovery, pdhttpOpts...)
+	return client, nil
 }
 
 // Close the pd api client, at the moment only close idle http connections if there is any.
