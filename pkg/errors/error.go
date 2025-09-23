@@ -361,8 +361,12 @@ var (
 		errors.RFCCodeText("CDC:ErrInvalidKeyspace"),
 	)
 	ErrKeyspaceNotFound = errors.Normalize(
-		`keyspace not found`,
+		"keyspace not found",
 		errors.RFCCodeText("CDC:ErrKeyspaceNotFound"),
+	)
+	ErrKeyspaceIDInvalid = errors.Normalize(
+		"keyspace id is invalid",
+		errors.RFCCodeText("CDC:ErrKeyspaceIDInvalid"),
 	)
 	ErrInvalidEtcdKey = errors.Normalize(
 		"invalid key: %s",
