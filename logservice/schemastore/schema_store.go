@@ -261,7 +261,7 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchema
 		return nil, errors.Trace(err)
 	}
 
-	if err := s.RegisterKeyspace(context.Background(), keyspaceMeta.Name); err != nil {
+	if err := s.RegisterKeyspace(ctx, keyspaceMeta.Name); err != nil {
 		return nil, errors.Trace(err)
 	}
 
