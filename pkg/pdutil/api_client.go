@@ -125,7 +125,7 @@ func NewPDAPIClient(pdClient pd.Client, conf *security.Credential) (PDAPIClient,
 
 	pdHttpClient, err := newPdHttpClient(pdClient, conf)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
 	return &pdAPIClient{
