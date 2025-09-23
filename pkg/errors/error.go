@@ -360,6 +360,10 @@ var (
 		`bad keyspace, please match the pattern "^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*$", the length should no more than %d, eg, "simple-keyspace-test"`,
 		errors.RFCCodeText("CDC:ErrInvalidKeyspace"),
 	)
+	ErrKeyspaceNotFound = errors.Normalize(
+		`keyspace not found`,
+		errors.RFCCodeText("CDC:ErrKeyspaceNotFound"),
+	)
 	ErrInvalidEtcdKey = errors.Normalize(
 		"invalid key: %s",
 		errors.RFCCodeText("CDC:ErrInvalidEtcdKey"),

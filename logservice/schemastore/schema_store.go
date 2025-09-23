@@ -245,13 +245,38 @@ func (s *schemaStore) Name() string {
 
 func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchemaStore, error) {
 	s.keyspaceLocker.RLock()
-	defer s.keyspaceLocker.RUnlock()
 	store, ok := s.keyspaceSchemaStoreMap[keyspaceID]
 	if ok {
+		s.keyspaceLocker.RUnlock()
 		return store, nil
 	}
+	s.keyspaceLocker.RUnlock()
 
-	return nil, errors.ErrInvalidKeyspace
+	ctx := context.Background()
+
+	// if the schemastore does not contain the keyspace, it means the current
+	// cdc node is a follower node. It should register the keyspace when it try
+	// to get keyspace schema_store
+	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
+	keyspaceMeta, err := keyspaceManager.GetKeyspaceByID(ctx, keyspaceID)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	err = s.RegisterKeyspace(context.Background(), keyspaceMeta.Name)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	s.keyspaceLocker.RLock()
+	store, ok = s.keyspaceSchemaStoreMap[keyspaceID]
+	if ok {
+		s.keyspaceLocker.RUnlock()
+		return store, nil
+	}
+	s.keyspaceLocker.RUnlock()
+
+	return nil, errors.ErrKeyspaceNotFound
 }
 
 func (s *schemaStore) initialize(ctx context.Context) {
