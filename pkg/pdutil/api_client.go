@@ -37,6 +37,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/retry"
 	"github.com/pingcap/ticdc/pkg/security"
 	pd "github.com/tikv/pd/client"
+	pdhttp "github.com/tikv/pd/client/http"
 	"go.uber.org/zap"
 )
 
@@ -104,13 +105,15 @@ type PDAPIClient interface {
 	Healthy(ctx context.Context, endpoint string) error
 	ScanRegions(ctx context.Context, span heartbeatpb.TableSpan) ([]RegionInfo, error)
 	LoadKeyspace(ctx context.Context, name string) (*keyspacepb.KeyspaceMeta, error)
+	GetKeyspaceMetaByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
 	Close()
 }
 
 // pdAPIClient is the api client of Placement Driver, include grpc client and http client.
 type pdAPIClient struct {
-	grpcClient pd.Client
-	httpClient *httputil.Client
+	grpcClient   pd.Client
+	httpClient   *httputil.Client
+	pdHttpClient pdhttp.Client
 }
 
 // NewPDAPIClient create a new pdAPIClient.
@@ -119,9 +122,24 @@ func NewPDAPIClient(pdClient pd.Client, conf *security.Credential) (PDAPIClient,
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
+
+	discovery := pdClient.GetServiceDiscovery()
+	pdhttpOpts := make([]pdhttp.ClientOption, 0)
+
+	tlsConf, err := conf.ToTLSConfigWithVerify()
+	if err != nil {
+		return nil, err
+	}
+
+	if tlsConf != nil {
+		opt := pdhttp.WithTLSConfig(tlsConf)
+		pdhttpOpts = append(pdhttpOpts, opt)
+	}
+
 	return &pdAPIClient{
-		grpcClient: pdClient,
-		httpClient: dialClient,
+		grpcClient:   pdClient,
+		httpClient:   dialClient,
+		pdHttpClient: pdhttp.NewClientWithServiceDiscovery("cdc", discovery, pdhttpOpts...),
 	}, nil
 }
 
@@ -281,6 +299,14 @@ func (pc *pdAPIClient) LoadKeyspace(ctx context.Context, name string) (*keyspace
 		return &keyspacepb.KeyspaceMeta{}, nil
 	}
 	return pc.grpcClient.LoadKeyspace(ctx, name)
+}
+
+func (pc *pdAPIClient) GetKeyspaceMetaByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error) {
+	if kerneltype.IsClassic() {
+		return &keyspacepb.KeyspaceMeta{}, nil
+	}
+
+	return pc.pdHttpClient.GetKeyspaceMetaByID(ctx, keyspaceID)
 }
 
 // ServiceSafePoint contains gc service safe point

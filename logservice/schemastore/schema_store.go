@@ -247,10 +247,11 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchema
 	s.keyspaceLocker.RLock()
 	defer s.keyspaceLocker.RUnlock()
 	store, ok := s.keyspaceSchemaStoreMap[keyspaceID]
-	if !ok {
-		return nil, errors.ErrInvalidKeyspace
+	if ok {
+		return store, nil
 	}
-	return store, nil
+
+	return nil, errors.ErrInvalidKeyspace
 }
 
 func (s *schemaStore) initialize(ctx context.Context) {

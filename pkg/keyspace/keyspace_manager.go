@@ -34,7 +34,7 @@ import (
 
 type KeyspaceManager interface {
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
-	GetKeyspaceByID(keyspaceID uint32) *keyspacepb.KeyspaceMeta
+	GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
 	GetStorage(keyspace string) (kv.Storage, error)
 	Close()
 }
@@ -94,16 +94,34 @@ func (k *keyspaceManager) LoadKeyspace(ctx context.Context, keyspace string) (*k
 	return meta, nil
 }
 
-func (k *keyspaceManager) GetKeyspaceByID(keyspaceID uint32) *keyspacepb.KeyspaceMeta {
+func (k *keyspaceManager) GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error) {
 	if kerneltype.IsClassic() {
 		return &keyspacepb.KeyspaceMeta{
 			Name: common.DefaultKeyspace,
-		}
+		}, nil
 	}
 
 	k.keyspaceMu.Lock()
 	defer k.keyspaceMu.Unlock()
-	return k.keyspaceIDMap[keyspaceID]
+	meta := k.keyspaceIDMap[keyspaceID]
+	if meta != nil {
+		return meta, nil
+	}
+
+	var err error
+	pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
+	err = retry.Do(ctx, func() error {
+		meta, err = pdAPIClient.GetKeyspaceMetaByID(ctx, keyspaceID)
+		if err != nil {
+			return err
+		}
+		return nil
+	}, retry.WithBackoffBaseDelay(500), retry.WithBackoffMaxDelay(1000), retry.WithMaxTries(6))
+
+	k.keyspaceMap[meta.Name] = meta
+	k.keyspaceIDMap[keyspaceID] = meta
+
+	return meta, nil
 }
 
 func (k *keyspaceManager) GetStorage(keyspace string) (kv.Storage, error) {
