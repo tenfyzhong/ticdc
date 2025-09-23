@@ -246,11 +246,10 @@ func (s *schemaStore) Name() string {
 func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchemaStore, error) {
 	s.keyspaceLocker.RLock()
 	store, ok := s.keyspaceSchemaStoreMap[keyspaceID]
+	s.keyspaceLocker.RUnlock()
 	if ok {
-		s.keyspaceLocker.RUnlock()
 		return store, nil
 	}
-	s.keyspaceLocker.RUnlock()
 
 	ctx := context.Background()
 
@@ -262,18 +261,16 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceID uint32) (*keyspaceSchema
 		return nil, errors.Trace(err)
 	}
 
-	err = s.RegisterKeyspace(context.Background(), keyspaceMeta.Name)
-	if err != nil {
+	if err := s.RegisterKeyspace(context.Background(), keyspaceMeta.Name); err != nil {
 		return nil, errors.Trace(err)
 	}
 
 	s.keyspaceLocker.RLock()
 	store, ok = s.keyspaceSchemaStoreMap[keyspaceID]
+	s.keyspaceLocker.RUnlock()
 	if ok {
-		s.keyspaceLocker.RUnlock()
 		return store, nil
 	}
-	s.keyspaceLocker.RUnlock()
 
 	return nil, errors.ErrKeyspaceNotFound
 }
