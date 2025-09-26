@@ -80,20 +80,20 @@ arch=$(uname -m)
 
 if [ ! -x bin/minio ]; then
 	# Download minio
-	echo -e "${YELLOW} downloading minio...${NC}"
-	wget -O bin/minio https://dl.min.io/server/minio/release/darwin-$arch/minio
+	echo -e "${YELLOW}downloading minio...${NC}"
+	wget -O bin/minio "https://dl.min.io/server/minio/release/darwin-$arch/minio"
 	chmod +x bin/minio
 fi
 
 if [ ! -x bin/jq ]; then
 	# Download jq using curl
-	echo -e "${YELLOW} downloading jq...${NC}"
-	wget -O bin/jq https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-macos-$arch
+	echo -e "${YELLOW}downloading jq...${NC}"
+	wget -O bin/jq "https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-macos-$arch"
 	chmod +x bin/jq
 fi
 
 if [ ! -x bin/bin/kafka-server-start ]; then
-	echo -e "${YELLOW} downloading confluent...${NC}"
+	echo -e "${YELLOW}downloading confluent...${NC}"
 	wget -O bin/confluent-7.5.2.tar.gz https://packages.confluent.io/archive/7.5/confluent-7.5.2.tar.gz
 	tar -C bin/ -xzf bin/confluent-7.5.2.tar.gz
 	rm bin/confluent-7.5.2.tar.gz
@@ -102,24 +102,26 @@ if [ ! -x bin/bin/kafka-server-start ]; then
 fi
 
 if [ ! -x bin/go-ycsb ]; then
-	echo -e "${YELLOW} downloading go-ycsb...${NC}"
-	wget -O bin/go-ycsb-darwin-$arch.tar.gz https://github.com/pingcap/go-ycsb/releases/latest/download/go-ycsb-darwin-$arch.tar.gz
-	tar -C bin/ -xzf bin/go-ycsb-darwin-$arch.tar.gz
+	echo -e "${YELLOW}downloading go-ycsb...${NC}"
+	wget -O "bin/go-ycsb-darwin-$arch.tar.gz" "https://github.com/pingcap/go-ycsb/releases/latest/download/go-ycsb-darwin-$arch.tar.gz"
+	tar -C bin/ -xzf "bin/go-ycsb-darwin-$arch.tar.gz"
+	rm -rf "bin/go-ycsb-darwin-$arch.tar.gz"
 fi
 
 if [ ! -x bin/etcdctl ]; then
-	echo -e "${YELLOW} downloading etcd...${NC}"
-	wget -O bin/etcd-v3.6.1-darwin-$arch.zip https://github.com/etcd-io/etcd/releases/download/v3.6.1/etcd-v3.6.1-darwin-$arch.zip
-	unzip -d bin/ bin/etcd-v3.6.1-darwin-$arch.zip
-	rm bin/etcd-v3.6.1-darwin-$arch.zip
-	mv bin/etcd-v3.6.1-darwin-$arch/etcdctl bin/
-	rm -rf bin/etcd-v3.6.1-darwin-$arch
+	echo -e "${YELLOW}downloading etcd...${NC}"
+	wget -O "bin/etcd-v3.6.1-darwin-$arch.zip" "https://github.com/etcd-io/etcd/releases/download/v3.6.1/etcd-v3.6.1-darwin-$arch.zip"
+	unzip -d bin/ "bin/etcd-v3.6.1-darwin-$arch.zip"
+	rm "bin/etcd-v3.6.1-darwin-$arch.zip"
+	mv "bin/etcd-v3.6.1-darwin-$arch/etcdctl" bin/
+	rm -rf "bin/etcd-v3.6.1-darwin-$arch"
 fi
 
 if [ ! -x bin/sync_diff_inspector ]; then
-	echo -e "${YELLOW} downloading sync-diff-inspector...${NC}"
-	wget -O bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz
-	tar -C bin/ -xzf bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz
+	echo -e "${YELLOW}downloading sync-diff-inspector...${NC}"
+	wget -O "bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz"
+	tar -C bin/ -xzf "bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz"
+	rm -rf "bin/sync-diff-inspector-v9.0.0-beta.1-darwin-$arch.tar.gz"
 fi
 
 if [[ "$disable_tidb" == "1" ]]; then
@@ -128,26 +130,39 @@ if [[ "$disable_tidb" == "1" ]]; then
 fi
 
 if [ ! -x bin/tidb-server ]; then
-    echo -e "${YELLOW} downloading tidb...${NC}"
-    wget -O bin/tidb-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tidb-$ver-darwin-$arch.tar.gz
-    tar -C bin/ -xvf bin/tidb-$ver-darwin-$arch.tar.gz
-    rm bin/tidb-$ver-darwin-$arch.tar.gz
+	echo -e "${YELLOW}downloading tidb...${NC}"
+	wget -O "bin/tidb-$ver-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/tidb-$ver-darwin-$arch.tar.gz"
+	tar -C bin/ -xvf "bin/tidb-$ver-darwin-$arch.tar.gz"
+	rm "bin/tidb-$ver-darwin-$arch.tar.gz"
 fi
 
-wget -O bin/tikv-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tikv-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/tikv-$ver-darwin-$arch.tar.gz
+if [ ! -x bin/tikv-server ]; then
+	echo -e "${YELLOW}downloading tikv...${NC}"
+	wget -O "bin/tikv-$ver-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/tikv-$ver-darwin-$arch.tar.gz"
+	tar -C bin/ -xvf "bin/tikv-$ver-darwin-$arch.tar.gz"
+	rm "bin/tikv-$ver-darwin-$arch.tar.gz"
+fi
 
-wget -O bin/cdc-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/cdc-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/cdc-$ver-darwin-$arch.tar.gz
-cp bin/cdc bin/cdc.test
+if [ ! -x bin/pd-server ]; then
+	echo -e "${YELLOW}downloading pd...${NC}"
+	wget -O "bin/pd-$ver-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/pd-$ver-darwin-$arch.tar.gz"
+	tar -C bin/ -xvf "bin/pd-$ver-darwin-$arch.tar.gz"
+	rm "bin/pd-$ver-darwin-$arch.tar.gz"
+fi
 
-wget -O bin/pd-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/pd-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/pd-$ver-darwin-$arch.tar.gz
+if [ ! -x bin/tiflash ]; then
+	echo -e "${YELLOW}downloading tiflash...${NC}"
+	wget -O "bin/tiflash-$ver-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/tiflash-$ver-darwin-$arch.tar.gz"
+	tar -C bin/ -xvf "bin/tiflash-$ver-darwin-$arch.tar.gz"
+	mv bin/tiflash "bin/tiflash-bin"
+	mv bin/tiflash-bin/* bin/
+	rm -rf "bin/tiflash-$ver-darwin-$arch.tar.gz"
+	rm -rf bin/tiflash-bin
+fi
 
-wget -O bin/tiflash-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tiflash-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/tiflash-$ver-darwin-$arch.tar.gz
-mv bin/tiflash/tiflash bin/
-rm -rf bin/tiflash
-
-wget -O bin/ctl-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/ctl-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/ctl-$ver-darwin-$arch.tar.gz
+if [ ! -x bin/pd-ctl ]; then
+	echo -e "${YELLOW}downloading ctl...${NC}"
+	wget -O "bin/ctl-$ver-darwin-$arch.tar.gz" "https://tiup-mirrors.pingcap.com/ctl-$ver-darwin-$arch.tar.gz"
+	tar -C bin/ -xvf "bin/ctl-$ver-darwin-$arch.tar.gz"
+	rm -rf "bin/ctl-$ver-darwin-$arch.tar.gz"
+fi
