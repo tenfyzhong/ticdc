@@ -92,12 +92,13 @@ if [ ! -x bin/jq ]; then
 	chmod +x bin/jq
 fi
 
-if [ ! -d bin/bin ]; then
+if [ ! -x bin/bin/kafka-server-start ]; then
 	echo -e "${YELLOW} downloading confluent...${NC}"
 	wget -O bin/confluent-7.5.2.tar.gz https://packages.confluent.io/archive/7.5/confluent-7.5.2.tar.gz
 	tar -C bin/ -xzf bin/confluent-7.5.2.tar.gz
+	rm bin/confluent-7.5.2.tar.gz
 	mv bin/confluent-7.5.2/bin/ bin/
-	rm -rf confluent-7.5.2
+	rm -rf bin/confluent-7.5.2
 fi
 
 if [ ! -x bin/go-ycsb ]; then
