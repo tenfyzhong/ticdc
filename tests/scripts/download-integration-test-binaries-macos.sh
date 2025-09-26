@@ -146,8 +146,8 @@ tar -C bin/ -xvf bin/pd-$ver-darwin-$arch.tar.gz
 
 wget -O bin/tiflash-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tiflash-$ver-darwin-$arch.tar.gz
 tar -C bin/ -xvf bin/tiflash-$ver-darwin-$arch.tar.gz
-mv bin/tiflash bin/tiflash-$ver-darwin-$arch
-mv bin/tiflash-$ver-darwin-$arch/tiflash bin/
+mv bin/tiflash/tiflash bin/
+rm -rf bin/tiflash
 
 wget -O bin/ctl-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/ctl-$ver-darwin-$arch.tar.gz
 tar -C bin/ -xvf bin/ctl-$ver-darwin-$arch.tar.gz
