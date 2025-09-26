@@ -111,7 +111,9 @@ if [ ! -x bin/etcdctl ]; then
 	echo -e "${YELLOW} downloading etcd...${NC}"
 	wget -O bin/etcd-v3.6.1-darwin-$arch.zip https://github.com/etcd-io/etcd/releases/download/v3.6.1/etcd-v3.6.1-darwin-$arch.zip
 	unzip -d bin/ bin/etcd-v3.6.1-darwin-$arch.zip
+	rm bin/etcd-v3.6.1-darwin-$arch.zip
 	mv bin/etcd-v3.6.1-darwin-$arch/etcdctl bin/
+	rm -rf bin/etcd-v3.6.1-darwin-$arch
 fi
 
 if [ ! -x bin/sync_diff_inspector ]; then
