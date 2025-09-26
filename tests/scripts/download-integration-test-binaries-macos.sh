@@ -127,8 +127,12 @@ if [[ "$disable_tidb" == "1" ]]; then
 	exit 0
 fi
 
-wget -O bin/tidb-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tidb-$ver-darwin-$arch.tar.gz
-tar -C bin/ -xvf bin/tidb-$ver-darwin-$arch.tar.gz
+if [ ! -x bin/tidb-server ]; then
+    echo -e "${YELLOW} downloading tidb...${NC}"
+    wget -O bin/tidb-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tidb-$ver-darwin-$arch.tar.gz
+    tar -C bin/ -xvf bin/tidb-$ver-darwin-$arch.tar.gz
+    rm bin/tidb-$ver-darwin-$arch.tar.gz
+fi
 
 wget -O bin/tikv-$ver-darwin-$arch.tar.gz https://tiup-mirrors.pingcap.com/tikv-$ver-darwin-$arch.tar.gz
 tar -C bin/ -xvf bin/tikv-$ver-darwin-$arch.tar.gz
