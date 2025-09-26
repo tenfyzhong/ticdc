@@ -11,7 +11,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+set -euo pipefail
 # ANSI color codes for styling the output
 RED='\033[0;31m'    # Sets text to red
 GREEN='\033[0;32m'  # Sets text to green
