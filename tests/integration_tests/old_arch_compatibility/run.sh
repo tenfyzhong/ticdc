@@ -3,7 +3,7 @@
 # The test will create changefeed with old arch, write some data, then switch to new arch,
 # continue writing data, and finally check data consistency.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

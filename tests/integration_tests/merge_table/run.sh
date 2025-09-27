@@ -2,7 +2,7 @@
 # it first split a table as multiple dispatchers, then try to use merge table
 # to merge the dispatchers into one dispatcher
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

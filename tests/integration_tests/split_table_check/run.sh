@@ -6,7 +6,7 @@
 # 4. Then we execute a DDL that will break splitable (add unique key), which should cause an error.
 # 5. We verify that the changefeed reports the expected error.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

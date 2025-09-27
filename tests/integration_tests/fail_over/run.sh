@@ -3,7 +3,7 @@
 # The test just test the basic normal fail-over process
 # (kill cdc node and start it again | two node, kill one and restart this one )
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

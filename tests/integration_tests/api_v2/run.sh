@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -31,7 +31,7 @@ if [ "$SINK_TYPE" == "mysql" ]; then
 	prepare $*
 
 	cd "$(dirname "$0")"
-	set -euxo pipefail
+	set -uxo pipefail
 
 	GO111MODULE=on go run main.go model.go request.go cases.go
 

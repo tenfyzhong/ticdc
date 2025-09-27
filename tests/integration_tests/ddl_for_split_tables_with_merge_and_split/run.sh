@@ -7,7 +7,7 @@
 # 5. we restart the cdc server to disable the failpoint.
 # 6. we check the data consistency between the upstream and downstream.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

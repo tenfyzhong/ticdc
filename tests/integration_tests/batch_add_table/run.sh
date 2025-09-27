@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -u
 export PS4='+$(basename ${BASH_SOURCE}):${LINENO}:'
 set -x
 

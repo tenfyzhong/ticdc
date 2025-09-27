@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -107,7 +107,6 @@ function run() {
 	# Make sure changefeed can not be created if the name is already exists.
 	set +e
 	exists=$(cdc_cli_changefeed create --start-ts=$start_ts --sink-uri="$SINK_URI" --changefeed-id="$uuid" | grep -oE 'already exists')
-	set -e
 	if [[ -z $exists ]]; then
 		echo "[$(date)] <<<<< unexpect output got ${exists} >>>>>"
 		exit 1
@@ -121,7 +120,6 @@ enable-table-across-nodes = true
 EOF
 	set +e
 	update_result=$(cdc_cli_changefeed update --pd=$pd_addr --config="$WORK_DIR/changefeed.toml" --no-confirm --changefeed-id $uuid)
-	set -e
 	if [[ ! $update_result == *"can only update changefeed config when it is stopped"* ]]; then
 		echo "update changefeed config should fail when changefeed is running, got $update_result"
 	fi

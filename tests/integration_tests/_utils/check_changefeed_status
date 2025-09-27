@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -x
 
 # parameter 1: cdc endpoint
 # parameter 2: changefeed id

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

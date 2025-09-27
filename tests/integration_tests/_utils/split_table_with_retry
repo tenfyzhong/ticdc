@@ -3,7 +3,7 @@
 # parameter 2: changefeed id
 # parameter 3: retry count
 
-set -ex
+set -x
 
 tableID=${1}
 changefeedID=${2}

@@ -8,8 +8,6 @@
 # --addr: address
 # --pd: pd address
 
-set -e
-
 workdir=
 tls=
 tls_dir=

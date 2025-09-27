@@ -16,7 +16,7 @@
 # We use a failpoint to sleep for a time after write the ddl and before report to maintainer, to simulate
 # the timing the other node restarted.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

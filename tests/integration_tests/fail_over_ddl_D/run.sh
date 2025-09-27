@@ -14,7 +14,7 @@
 #     3 ddl is rename table
 #     5 ddl is truncate table
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

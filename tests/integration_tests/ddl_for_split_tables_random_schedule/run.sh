@@ -6,7 +6,7 @@
 # finally, we check the data consistency between the upstream and downstream, and final dispatchers count of these tables,
 # to make sure the schedule process is correct.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

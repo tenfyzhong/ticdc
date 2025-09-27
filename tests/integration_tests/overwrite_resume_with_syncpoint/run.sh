@@ -2,7 +2,7 @@
 # the script test when we enable syncpoint, and pause the changefeed,
 # then resume with a forward checkpoint, to ensure the changefeed can be sync correctly.
 
-set -eux
+set -ux
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

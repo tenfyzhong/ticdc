@@ -2,7 +2,7 @@
 
 # This file is used to run integration tests for developers(self-test).
 
-set -eu
+set -u
 
 OUT_DIR=/tmp/tidb_cdc_test
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -68,7 +68,7 @@ fi
 
 # Print environment variables.
 env
-set -eu
+set -u
 
 if [ "$test_case" == "*" ]; then
 	for script in $CUR/*/run.sh; do

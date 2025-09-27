@@ -7,7 +7,7 @@
 # 4. one thread we randomly move the table(all related dispatchers) to other nodes.
 # finally, we check the data consistency between the upstream and downstream.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

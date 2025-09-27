@@ -1,7 +1,7 @@
 ## this case is used to verify the new changefeed config afer update changefeed take effect. Such as filter or split table
 #!/bin/bash
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

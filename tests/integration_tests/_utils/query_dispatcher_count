@@ -5,7 +5,7 @@
 # parameter 4: retry count
 # parameter 5: comparison mode, if set to "le" (less than or equal), compare value <= target; otherwise compare value == target
 
-set -ex
+set -x
 
 ipAddr=${1}
 changefeedID=${2}

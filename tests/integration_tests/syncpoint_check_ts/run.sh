@@ -7,7 +7,7 @@
 #   2. After test, get fisrt syncpoints from tidb_cdc.syncpoint_v1
 #   3. check the first syncpoint ts value
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

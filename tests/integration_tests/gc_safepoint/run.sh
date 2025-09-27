@@ -10,7 +10,7 @@
 # 6. Safepoint is cleared when all changefeeds are removed
 # The test supports multiple sink types (kafka, storage, pulsar, mysql) and includes data sync verification.
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare

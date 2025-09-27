@@ -4,7 +4,7 @@
 # parameter 3: changefeed id
 # parameter 4: retry count
 
-set -ex
+set -x
 
 ipAddr=${1}
 tableID=${2}

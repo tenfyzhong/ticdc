@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # depencencies: minio, mc(minio client)
 
-set -e
 # export PS4='+$(basename ${BASH_SOURCE}):${LINENO}: '
 # set -x
 

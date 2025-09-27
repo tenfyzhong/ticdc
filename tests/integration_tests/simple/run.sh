@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -u
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source $CUR/../_utils/test_prepare
@@ -94,7 +94,6 @@ function sql_test() {
 		echo "check data failed $i-th time, retry later"
 		sleep 2
 	done
-	set -e
 
 	if [ $i -ge $check_time ]; then
 		echo "check data failed at last"

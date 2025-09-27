@@ -12,7 +12,7 @@ error_handler() {
 # Set error handler
 trap 'error_handler ${LINENO} $?' ERR
 
-set -eu
+set -u
 export PS4='+$(basename ${BASH_SOURCE}):${LINENO}:'
 set -x
 

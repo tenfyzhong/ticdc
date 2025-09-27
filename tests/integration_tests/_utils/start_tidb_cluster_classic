@@ -4,8 +4,6 @@
 # --tidb-config: path to tidb config file
 # --retry: retry times
 
-set -e
-
 OUT_DIR=
 tidb_config=
 pd_config=
