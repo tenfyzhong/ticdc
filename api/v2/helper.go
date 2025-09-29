@@ -33,7 +33,7 @@ import (
 func getChangeFeed(host, keyspaceName, cfName string) (ChangeFeedInfo, error) {
 	security := config.GetGlobalServerConfig().Security
 
-	uri := fmt.Sprintf("/api/v2/changefeeds/%s?keyspace=%s", cfName, keyspaceName)
+uri := fmt.Sprintf("/api/v2/changefeeds/%s?keyspace=%s", cfName, url.QueryEscape(keyspaceName))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
