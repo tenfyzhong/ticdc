@@ -154,7 +154,7 @@ func GetGCState(ctx context.Context, gcCli gc.GCStatesClient) (gc.GCState, error
 func DeleteGCBarrier(ctx context.Context, gcCli gc.GCStatesClient, serviceID string) (barrierInfo *gc.GCBarrierInfo, err error) {
 	err = retry.Do(ctx, func() error {
 		info, err1 := gcCli.DeleteGCBarrier(ctx, serviceID)
-		if err != nil {
+		if err1 != nil {
 			log.Warn("Delete GC barrier failed, retry later", zap.Any("serviceID", serviceID))
 			return err1
 		}

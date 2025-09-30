@@ -80,7 +80,7 @@ func (h *OpenAPIV2) DeleteServiceGcSafePoint(c *gin.Context) {
 	keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
 	keyspaceMeta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), keyspaceName)
 	if err != nil {
-		_ = c.Error(err)
+		_ = c.Error(cerror.WrapError(cerror.ErrKeyspaceNotFound, err))
 		return
 	}
 

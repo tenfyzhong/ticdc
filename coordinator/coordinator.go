@@ -290,7 +290,7 @@ func (c *coordinator) handleStateChange(
 		keyspaceManager := appcontext.GetService[keyspace.KeyspaceManager](appcontext.KeyspaceManager)
 		keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, event.changefeedID.Keyspace())
 		if err != nil {
-			log.Warn("failed to load keyspace", zap.String("keyspace", event.changefeedID.Keyspace()))
+			log.Warn("failed to load keyspace", zap.String("keyspace", event.changefeedID.Keyspace()), zap.Error(err))
 		} else {
 			// We need to clean its gc safepoint when changefeed is resumed or created
 			gcServiceID := c.getEnsureGCServiceID(gc.EnsureGCServiceCreating)
