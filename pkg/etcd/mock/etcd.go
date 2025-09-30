@@ -198,6 +198,23 @@ func (mr *MockCDCEtcdClientMockRecorder) GetChangeFeedStatus(ctx, id interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChangeFeedStatus", reflect.TypeOf((*MockCDCEtcdClient)(nil).GetChangeFeedStatus), ctx, id)
 }
 
+// GetChangefeedInfoAndStatus mocks base method.
+func (m *MockCDCEtcdClient) GetChangefeedInfoAndStatus(ctx context.Context) (int64, map[common.ChangeFeedDisplayName]*mvccpb.KeyValue, map[common.ChangeFeedDisplayName]*mvccpb.KeyValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChangefeedInfoAndStatus", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(map[common.ChangeFeedDisplayName]*mvccpb.KeyValue)
+	ret2, _ := ret[2].(map[common.ChangeFeedDisplayName]*mvccpb.KeyValue)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GetChangefeedInfoAndStatus indicates an expected call of GetChangefeedInfoAndStatus.
+func (mr *MockCDCEtcdClientMockRecorder) GetChangefeedInfoAndStatus(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChangefeedInfoAndStatus", reflect.TypeOf((*MockCDCEtcdClient)(nil).GetChangefeedInfoAndStatus), ctx)
+}
+
 // GetClusterID mocks base method.
 func (m *MockCDCEtcdClient) GetClusterID() string {
 	m.ctrl.T.Helper()
