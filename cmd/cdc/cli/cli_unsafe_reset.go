@@ -86,6 +86,8 @@ func (o *unsafeResetOptions) run(cmd *cobra.Command) error {
 		return errors.Trace(err)
 	}
 
+	// TODO tenfyzhong 2025-09-30 11:52:49 Compitable with next gen mode
+	// We should get all keyspace from PD and delete all gc barriers
 	err = gc.RemoveServiceGCSafepoint(ctx, o.pdClient, o.etcdClient.GetGCServiceID())
 	if err != nil {
 		return errors.Trace(err)
