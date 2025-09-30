@@ -232,6 +232,7 @@ func (c *CDCEtcdClientImpl) CheckMultipleCDCClusterExist(ctx context.Context) er
 // GetChangefeedInfoAndStatus returns kv revision and a map mapping from changefeedID to changefeed info and status
 func (c *CDCEtcdClientImpl) GetChangefeedInfoAndStatus(ctx context.Context) (revision int64, statusMap map[common.ChangeFeedDisplayName]*mvccpb.KeyValue, infoMap map[common.ChangeFeedDisplayName]*mvccpb.KeyValue, err error) {
 	allDataPrefix := BaseKey(c.ClusterID)
+	// TODO tenfyzhong 2025-09-30 17:00:57 We should obtain data by page
 	resp, err := c.Client.Get(ctx, allDataPrefix, clientv3.WithPrefix())
 	if err != nil {
 		return 0, nil, nil, errors.WrapError(errors.ErrPDEtcdAPIError, err)

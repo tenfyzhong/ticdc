@@ -22,7 +22,7 @@ import (
 	"github.com/pingcap/errors"
 	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/config"
-	mock_etcd "github.com/pingcap/ticdc/pkg/etcd/mock"
+	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -30,8 +30,8 @@ import (
 
 func TestGetAllChangefeeds(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 
@@ -98,8 +98,8 @@ func TestGetAllChangefeeds(t *testing.T) {
 
 func TestCreateChangefeed(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -122,8 +122,8 @@ func TestCreateChangefeed(t *testing.T) {
 
 func TestUpdateChangefeed(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -150,8 +150,8 @@ func TestPauseChangefeed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -172,8 +172,8 @@ func TestDeleteChangefeed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -196,8 +196,8 @@ func TestResumeChangefeed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -218,8 +218,8 @@ func TestSetChangefeedProgress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
@@ -238,8 +238,8 @@ func TestUpdateChangefeedCheckpointTs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	cdcClient := mock_etcd.NewMockCDCEtcdClient(ctrl)
-	etcdClient := mock_etcd.NewMockClient(ctrl)
+	cdcClient := etcd.NewMockCDCEtcdClient(ctrl)
+	etcdClient := etcd.NewMockClient(ctrl)
 	cdcClient.EXPECT().GetEtcdClient().Return(etcdClient).AnyTimes()
 	cdcClient.EXPECT().GetClusterID().Return("test-cluster-id").AnyTimes()
 	backend := NewEtcdBackend(cdcClient)
