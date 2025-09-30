@@ -250,7 +250,7 @@ func (c *CDCEtcdClientImpl) GetChangefeedInfoAndStatus(ctx context.Context) (rev
 			infoMap[common.NewChangeFeedDisplayName(cf, ks)] = kv
 		}
 	}
-	return revision, nil, infoMap, nil
+	return revision, statusMap, infoMap, nil
 }
 
 // GetChangeFeeds returns kv revision and a map mapping from changefeedID to changefeed detail mvccpb.KeyValue
