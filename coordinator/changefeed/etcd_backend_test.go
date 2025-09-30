@@ -70,12 +70,6 @@ func TestGetAllChangefeeds(t *testing.T) {
 		},
 		nil,
 	).Times(1)
-	// etcdClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
-	// 	Return(&clientv3.GetResponse{Kvs: []*mvccpb.KeyValue{
-	// 		{Key: []byte("/tidb/cdc/default/default/changefeed/info/test"), Value: []byte("{\"changefeed-id\":\"test\", \"start-ts\": 1}")},
-	// 		{Key: []byte("/tidb/cdc/default/default/changefeed/status/test"), Value: []byte("}{")},
-	// 	}}, nil).
-	// 	Times(1)
 	// put the gid and status
 	etcdClient.EXPECT().Put(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(2)
 	resp, err = backend.GetAllChangefeeds(context.Background())
@@ -96,11 +90,6 @@ func TestGetAllChangefeeds(t *testing.T) {
 		nil,
 		nil,
 	).Times(1)
-	// etcdClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
-	// 	Return(&clientv3.GetResponse{Kvs: []*mvccpb.KeyValue{
-	// 		{Key: []byte("/tidb/cdc/default/default/changefeed/status/test"), Value: []byte("{}")},
-	// 	}}, nil).
-	// 	Times(1)
 	resp, err = backend.GetAllChangefeeds(context.Background())
 	require.NotNil(t, resp)
 	require.Nil(t, err)
