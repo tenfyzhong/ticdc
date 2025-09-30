@@ -102,7 +102,7 @@ func (o *unsafeResetOptions) run(cmd *cobra.Command) error {
 		return errors.Trace(err)
 	}
 
-	keyspaceNameMap := make(map[string]struct{}, 0)
+	keyspaceNameMap := make(map[string]struct{})
 	for key := range infoMap {
 		keyspaceNameMap[key.Keyspace] = struct{}{}
 	}
