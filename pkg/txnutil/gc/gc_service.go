@@ -137,8 +137,8 @@ func UnifyGetServiceGCSafepoint(ctx context.Context, pdCli pd.Client, keyspaceID
 	return gcState.TxnSafePoint, nil
 }
 
-// RemoveServiceGCSafepoint removes a service safepoint from PD.
-func RemoveServiceGCSafepoint(ctx context.Context, pdCli pd.Client, serviceID string) error {
+// removeServiceGCSafepoint removes a service safepoint from PD.
+func removeServiceGCSafepoint(ctx context.Context, pdCli pd.Client, serviceID string) error {
 	// Set TTL to 0 second to delete the service safe point.
 	TTL := 0
 	return retry.Do(ctx,
@@ -194,7 +194,7 @@ func DeleteGCBarrier(ctx context.Context, gcCli gc.GCStatesClient, serviceID str
 // barrier on next-gen mode
 func UnifyDeleteGcSafepoint(ctx context.Context, pdCli pd.Client, keyspaceID uint32, serviceID string) error {
 	if kerneltype.IsClassic() {
-		return RemoveServiceGCSafepoint(ctx, pdCli, serviceID)
+		return removeServiceGCSafepoint(ctx, pdCli, serviceID)
 	}
 
 	gcClient := pdCli.GetGCStatesClient(keyspaceID)
