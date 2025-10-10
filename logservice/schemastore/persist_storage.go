@@ -172,6 +172,7 @@ func (p *persistentStorage) initialize(ctx context.Context) {
 				ctx,
 				p.pdCli,
 				defaultSchemaStoreGcServiceID,
+				p.keyspaceID,
 				fakeChangefeedID,
 				defaultGcServiceTTL, gcSafePoint+1)
 			if err == nil {

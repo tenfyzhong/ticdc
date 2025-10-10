@@ -42,15 +42,13 @@ const (
 func EnsureChangefeedStartTsSafety(
 	ctx context.Context, pdCli pd.Client,
 	gcServiceIDPrefix string,
+	keyspaceID uint32,
 	changefeedID common.ChangeFeedID,
 	TTL int64, startTs uint64,
 ) error {
 	gcServiceID := gcServiceIDPrefix + changefeedID.Keyspace() + "_" + changefeedID.Name()
 	// set gc safepoint for the changefeed gc service
-	minServiceGCTs, err := setServiceGCSafepoint(
-		ctx, pdCli,
-		gcServiceID,
-		TTL, startTs)
+	minServiceGCTs, err := UnifySetServiceGCSafepoint(ctx, pdCli, keyspaceID, gcServiceID, TTL, startTs)
 	if err != nil {
 		return errors.Trace(err)
 	}
