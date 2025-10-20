@@ -38,9 +38,13 @@ const (
 )
 
 type Manager interface {
+	// LoadKeyspace loads keyspace metadata by name
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
+	// GetKeyspaceByID loads keyspace metadata by id
 	GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
+	// GetStorage get a storag for the keyspace
 	GetStorage(keyspace string) (kv.Storage, error)
+	// Close close the manager
 	Close()
 }
 
