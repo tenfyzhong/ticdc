@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/api/middleware"
 	"github.com/pingcap/ticdc/downstreamadapter/sink"
@@ -107,6 +108,12 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
 	if err != nil {
 		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
+		return
+	}
+
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
 		return
 	}
 
