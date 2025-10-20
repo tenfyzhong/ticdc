@@ -33,6 +33,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	periodicUpdateKeyspace = 60 * time.Second
+)
+
 type Manager interface {
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
 	GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
@@ -190,7 +194,7 @@ func (k *manager) update() {
 	}
 
 	mu := sync.Mutex{}
-	k.ticker = time.NewTicker(time.Second * 60)
+	k.ticker = time.NewTicker(periodicUpdateKeyspace)
 
 	go func() {
 		// If we cannot get the lock, we don't need to do anything
