@@ -38,7 +38,7 @@ const (
 )
 
 type Manager interface {
-	// Run
+	// Run starts the manager
 	Run()
 	// LoadKeyspace loads keyspace metadata by name
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
