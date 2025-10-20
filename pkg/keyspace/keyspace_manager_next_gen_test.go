@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build nextgen
+
 package keyspace
 
 import (
@@ -105,5 +107,93 @@ func Test_manager_update(t *testing.T) {
 	}, m.keyspaceMap)
 	require.EqualValues(t, map[uint32]*keyspacepb.KeyspaceMeta{
 		uint32(1): meta3,
+	}, m.keyspaceIDMap)
+}
+
+func Test_manager_GetKeyspaceByID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := pdutil.NewMockPDAPIClient(ctrl)
+
+	appcontext.SetService(appcontext.PDAPIClient, mockClient)
+
+	m := &manager{
+		keyspaceMap:   make(map[string]*keyspacepb.KeyspaceMeta),
+		keyspaceIDMap: make(map[uint32]*keyspacepb.KeyspaceMeta),
+		storageMap:    make(map[string]kv.Storage),
+	}
+
+	meta1 := &keyspacepb.KeyspaceMeta{
+		Id:             1,
+		Name:           "ks1",
+		State:          0,
+		CreatedAt:      1,
+		StateChangedAt: 1,
+		Config:         map[string]string{},
+	}
+	mockClient.EXPECT().GetKeyspaceMetaByID(gomock.Any(), gomock.Eq(uint32(1))).Return(meta1, nil).Times(1)
+	actual1, err := m.GetKeyspaceByID(context.Background(), 1)
+	require.NoError(t, err)
+	require.EqualValues(t, meta1, actual1)
+	require.Equal(t, map[string]*keyspacepb.KeyspaceMeta{
+		"ks1": meta1,
+	}, m.keyspaceMap)
+	require.Equal(t, map[uint32]*keyspacepb.KeyspaceMeta{
+		1: meta1,
+	}, m.keyspaceIDMap)
+
+	// GetKeyspaceByID again and it will load from local cache
+	actual2, err := m.GetKeyspaceByID(context.Background(), 1)
+	require.NoError(t, err)
+	require.EqualValues(t, meta1, actual2)
+	require.Equal(t, map[string]*keyspacepb.KeyspaceMeta{
+		"ks1": meta1,
+	}, m.keyspaceMap)
+	require.Equal(t, map[uint32]*keyspacepb.KeyspaceMeta{
+		1: meta1,
+	}, m.keyspaceIDMap)
+}
+
+func Test_manager_LoadKeyspace(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := pdutil.NewMockPDAPIClient(ctrl)
+
+	appcontext.SetService(appcontext.PDAPIClient, mockClient)
+
+	m := &manager{
+		keyspaceMap:   make(map[string]*keyspacepb.KeyspaceMeta),
+		keyspaceIDMap: make(map[uint32]*keyspacepb.KeyspaceMeta),
+		storageMap:    make(map[string]kv.Storage),
+	}
+
+	meta1 := &keyspacepb.KeyspaceMeta{
+		Id:             1,
+		Name:           "ks1",
+		State:          0,
+		CreatedAt:      1,
+		StateChangedAt: 1,
+		Config:         map[string]string{},
+	}
+	mockClient.EXPECT().LoadKeyspace(gomock.Any(), gomock.Eq("ks1")).Return(meta1, nil).Times(1)
+	actual1, err := m.LoadKeyspace(context.Background(), "ks1")
+	require.NoError(t, err)
+	require.EqualValues(t, meta1, actual1)
+	require.Equal(t, map[string]*keyspacepb.KeyspaceMeta{
+		"ks1": meta1,
+	}, m.keyspaceMap)
+	require.Equal(t, map[uint32]*keyspacepb.KeyspaceMeta{
+		1: meta1,
+	}, m.keyspaceIDMap)
+
+	// GetKeyspaceByID again and it will load from local cache
+	actual2, err := m.LoadKeyspace(context.Background(), "ks1")
+	require.NoError(t, err)
+	require.EqualValues(t, meta1, actual2)
+	require.Equal(t, map[string]*keyspacepb.KeyspaceMeta{
+		"ks1": meta1,
+	}, m.keyspaceMap)
+	require.Equal(t, map[uint32]*keyspacepb.KeyspaceMeta{
+		1: meta1,
 	}, m.keyspaceIDMap)
 }
