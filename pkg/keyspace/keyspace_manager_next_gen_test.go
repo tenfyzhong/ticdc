@@ -52,7 +52,7 @@ func Test_manager_update(t *testing.T) {
 		keyspaceIDMap: make(map[uint32]*keyspacepb.KeyspaceMeta),
 		storageMap:    make(map[string]kv.Storage),
 	}
-	m.forceLoadKeyspace(context.Background(), keyspace)
+	m.ForceLoadKeyspace(context.Background(), keyspace)
 	require.EqualValues(t, map[string]*keyspacepb.KeyspaceMeta{
 		"ks1": meta1,
 	}, m.keyspaceMap)

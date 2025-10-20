@@ -40,8 +40,11 @@ const (
 type Manager interface {
 	// Run starts the manager
 	Run()
-	// LoadKeyspace loads keyspace metadata by name
+	// LoadKeyspace loads keyspace metadata by name from local
+	// If the local cache is not found, it will load from pd
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
+	// ForceLoadKeyspace force loads keyspace metadata from pd and update local cache
+	ForceLoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
 	// GetKeyspaceByID loads keyspace metadata by id
 	GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
 	// GetStorage get a storag for the keyspace
@@ -94,10 +97,10 @@ func (k *manager) LoadKeyspace(ctx context.Context, keyspace string) (*keyspacep
 		return meta, nil
 	}
 
-	return k.forceLoadKeyspace(ctx, keyspace)
+	return k.ForceLoadKeyspace(ctx, keyspace)
 }
 
-func (k *manager) forceLoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error) {
+func (k *manager) ForceLoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error) {
 	var meta *keyspacepb.KeyspaceMeta
 	var err error
 	pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
@@ -230,7 +233,7 @@ func (k *manager) update() {
 
 	ctx := context.Background()
 	for _, keyspace := range keyspaces {
-		_, err := k.forceLoadKeyspace(ctx, keyspace)
+		_, err := k.ForceLoadKeyspace(ctx, keyspace)
 		if err != nil {
 			log.Warn("force load keyspace", zap.String("keyspace", keyspace), zap.Error(err))
 		}

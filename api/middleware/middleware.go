@@ -239,7 +239,7 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 		}
 
 		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-		meta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
+		meta, err := keyspaceManager.ForceLoadKeyspace(c.Request.Context(), ks)
 		if errors.IsKeyspaceNotExistError(err) {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
