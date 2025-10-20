@@ -17,6 +17,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
@@ -40,24 +41,29 @@ type Manager interface {
 }
 
 func NewManager(pdEndpoints []string) Manager {
-	return &manager{
+	m := &manager{
 		pdEndpoints:   pdEndpoints,
 		keyspaceMap:   make(map[string]*keyspacepb.KeyspaceMeta),
 		keyspaceIDMap: make(map[uint32]*keyspacepb.KeyspaceMeta),
 		storageMap:    make(map[string]kv.Storage),
 	}
+
+	m.update()
+
+	return m
 }
 
 type manager struct {
 	pdEndpoints []string
 
-	// TODO tenfyzhong 2025-09-16 23:46:01 update keyspaceMeta periodicity
 	keyspaceMap   map[string]*keyspacepb.KeyspaceMeta
 	keyspaceIDMap map[uint32]*keyspacepb.KeyspaceMeta
 	keyspaceMu    sync.Mutex
 
 	storageMap map[string]kv.Storage
 	storageMu  sync.Mutex
+
+	ticker *time.Ticker
 }
 
 func (k *manager) LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error) {
@@ -74,6 +80,11 @@ func (k *manager) LoadKeyspace(ctx context.Context, keyspace string) (*keyspacep
 		return meta, nil
 	}
 
+	return k.forceLoadKeyspace(ctx, keyspace)
+}
+
+func (k *manager) forceLoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error) {
+	var meta *keyspacepb.KeyspaceMeta
 	var err error
 	pdAPIClient := appcontext.GetService[pdutil.PDAPIClient](appcontext.PDAPIClient)
 	err = retry.Do(ctx, func() error {
@@ -90,10 +101,6 @@ func (k *manager) LoadKeyspace(ctx context.Context, keyspace string) (*keyspacep
 
 	k.keyspaceMu.Lock()
 	defer k.keyspaceMu.Unlock()
-	// Double check, another goroutine might have fetched and stored it.
-	if meta, ok := k.keyspaceMap[keyspace]; ok {
-		return meta, nil
-	}
 
 	k.keyspaceMap[keyspace] = meta
 	k.keyspaceIDMap[meta.Id] = meta
@@ -171,4 +178,41 @@ func (k *manager) Close() {
 			log.Error("close storage", zap.String("keyspace", storage.GetKeyspace()), zap.Error(err))
 		}
 	}
+
+	k.storageMap = make(map[string]kv.Storage)
+
+	k.ticker.Stop()
+}
+
+func (k *manager) update() {
+	if kerneltype.IsClassic() {
+		return
+	}
+
+	mu := sync.Mutex{}
+	k.ticker = time.NewTicker(time.Second * 60)
+
+	go func() {
+		// If we cannot get the lock, we don't need to do anything
+		// because that means the previous process is still running.
+		if !mu.TryLock() {
+			return
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+
+		for range k.ticker.C {
+			k.keyspaceMu.Lock()
+			keyspaces := make([]string, 0, len(k.keyspaceMap))
+			k.keyspaceMu.Unlock()
+			ctx := context.Background()
+			for _, keyspace := range keyspaces {
+				_, err := k.forceLoadKeyspace(ctx, keyspace)
+				if err != nil {
+					log.Warn("force load keyspace", zap.String("keyspace", keyspace), zap.Error(err))
+				}
+			}
+		}
+	}()
 }
