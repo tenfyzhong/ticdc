@@ -34,10 +34,12 @@ import (
 )
 
 const (
-	periodicUpdateKeyspace = 60 * time.Second
+	updateDuration = 60 * time.Second
 )
 
 type Manager interface {
+	// Run
+	Run()
 	// LoadKeyspace loads keyspace metadata by name
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
 	// GetKeyspaceByID loads keyspace metadata by id
@@ -56,8 +58,6 @@ func NewManager(pdEndpoints []string) Manager {
 		storageMap:    make(map[string]kv.Storage),
 	}
 
-	m.update()
-
 	return m
 }
 
@@ -72,6 +72,11 @@ type manager struct {
 	storageMu  sync.Mutex
 
 	ticker *time.Ticker
+}
+
+func (k *manager) Run() {
+	k.ticker = time.NewTicker(updateDuration)
+	go k.updatePeriodicity()
 }
 
 func (k *manager) LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error) {
@@ -192,34 +197,40 @@ func (k *manager) Close() {
 	k.ticker.Stop()
 }
 
-func (k *manager) update() {
+func (k *manager) updatePeriodicity() {
 	if kerneltype.IsClassic() {
 		return
 	}
 
-	mu := sync.Mutex{}
-	k.ticker = time.NewTicker(periodicUpdateKeyspace)
+	mu := &sync.Mutex{}
 
-	go func() {
-		// If we cannot get the lock, we don't need to do anything
-		// because that means the previous process is still running.
-		if !mu.TryLock() {
-			return
+	for range k.ticker.C {
+		k.update(mu)
+	}
+}
+
+func (k *manager) update(mu *sync.Mutex) {
+	// If we cannot get the lock, we don't need to do anything
+	// because that means the previous process is still running.
+	if !mu.TryLock() {
+		log.Info("update keyspace lock failed")
+		return
+	}
+
+	defer mu.Unlock()
+
+	k.keyspaceMu.Lock()
+	keyspaces := make([]string, 0, len(k.keyspaceMap))
+	for _, keyspace := range k.keyspaceMap {
+		keyspaces = append(keyspaces, keyspace.Name)
+	}
+	k.keyspaceMu.Unlock()
+
+	ctx := context.Background()
+	for _, keyspace := range keyspaces {
+		_, err := k.forceLoadKeyspace(ctx, keyspace)
+		if err != nil {
+			log.Warn("force load keyspace", zap.String("keyspace", keyspace), zap.Error(err))
 		}
-
-		defer mu.Unlock()
-
-		for range k.ticker.C {
-			k.keyspaceMu.Lock()
-			keyspaces := make([]string, 0, len(k.keyspaceMap))
-			k.keyspaceMu.Unlock()
-			ctx := context.Background()
-			for _, keyspace := range keyspaces {
-				_, err := k.forceLoadKeyspace(ctx, keyspace)
-				if err != nil {
-					log.Warn("force load keyspace", zap.String("keyspace", keyspace), zap.Error(err))
-				}
-			}
-		}
-	}()
+	}
 }
