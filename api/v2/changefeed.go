@@ -677,6 +677,12 @@ func (h *OpenAPIV2) ResumeChangefeed(c *gin.Context) {
 		return
 	}
 
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
+		return
+	}
+
 	resumeGcServiceID := h.server.GetEtcdClient().GetEnsureGCServiceID(gc.EnsureGCServiceResuming)
 	if err := verifyResumeChangefeedConfig(
 		ctx,
@@ -757,6 +763,18 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 		return
 	}
 
+	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
+	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
+	if err != nil {
+		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
+		return
+	}
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
+		return
+	}
+
 	oldCfInfo, status, err := co.GetChangefeed(c, changefeedDisplayName)
 	if err != nil {
 		_ = c.Error(err)
@@ -826,8 +844,6 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 			}
 		}
 		protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
-
-		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 
 		kvStorage, err := keyspaceManager.GetStorage(keyspaceName)
 		if err != nil {
