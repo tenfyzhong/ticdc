@@ -40,6 +40,9 @@ const (
 	topologyTiDBTTL = serverinfo.TopologySessionTTL
 	// defaultTimeout is the default timeout for etcd and mysql operations.
 	defaultTimeout = time.Second * 2
+
+	// keyspaceTiDBTopologyPrefix is the prefix of the TiDB topology key in etcd.
+	keyspaceTiDBTopologyPrefix = "/keyspaces/tidb/"
 )
 
 type TidbInstance struct {
@@ -119,9 +122,7 @@ func wrapTopologyTiDBKey(keyspaceID uint32) string {
 		return topologyTiDB
 	}
 
-	keyPrefix := fmt.Sprintf("/keyspaces/tidb/%d%s", keyspaceID, topologyTiDB)
-
-	return keyPrefix
+	return fmt.Sprintf("%s%d%s", keyspaceTiDBTopologyPrefix, keyspaceID, topologyTiDB)
 }
 
 func parseTiDBAliveness(value []byte) (bool, error) {
