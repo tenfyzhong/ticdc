@@ -207,7 +207,6 @@ func (k *manager) update() {
 			return
 		}
 
-		mu.Lock()
 		defer mu.Unlock()
 
 		for range k.ticker.C {
