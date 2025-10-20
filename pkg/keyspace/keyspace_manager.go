@@ -71,7 +71,8 @@ type manager struct {
 	storageMap map[string]kv.Storage
 	storageMu  sync.Mutex
 
-	ticker *time.Ticker
+	ticker   *time.Ticker
+	updateMu sync.Mutex
 }
 
 func (k *manager) Run() {
@@ -194,7 +195,10 @@ func (k *manager) Close() {
 
 	k.storageMap = make(map[string]kv.Storage)
 
-	k.ticker.Stop()
+	if k.ticker != nil {
+		k.ticker.Stop()
+		k.ticker = nil
+	}
 }
 
 func (k *manager) updatePeriodicity() {
@@ -202,22 +206,20 @@ func (k *manager) updatePeriodicity() {
 		return
 	}
 
-	mu := &sync.Mutex{}
-
 	for range k.ticker.C {
-		k.update(mu)
+		k.update()
 	}
 }
 
-func (k *manager) update(mu *sync.Mutex) {
+func (k *manager) update() {
 	// If we cannot get the lock, we don't need to do anything
 	// because that means the previous process is still running.
-	if !mu.TryLock() {
+	if !k.updateMu.TryLock() {
 		log.Info("update keyspace lock failed")
 		return
 	}
 
-	defer mu.Unlock()
+	defer k.updateMu.Unlock()
 
 	k.keyspaceMu.Lock()
 	keyspaces := make([]string, 0, len(k.keyspaceMap))

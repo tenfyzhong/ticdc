@@ -17,7 +17,6 @@ package keyspace
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -36,7 +35,6 @@ func Test_manager_update(t *testing.T) {
 	appcontext.SetService(appcontext.PDAPIClient, mockClient)
 
 	const keyspace = "ks1"
-	mu := &sync.Mutex{}
 
 	// step 1, load a metadata to make the map has a member
 	meta1 := &keyspacepb.KeyspaceMeta{
@@ -72,7 +70,7 @@ func Test_manager_update(t *testing.T) {
 		Config:         map[string]string{},
 	}
 	mockClient.EXPECT().LoadKeyspace(gomock.Any(), gomock.Eq(keyspace)).Return(meta2, nil).Times(1)
-	m.update(mu)
+	m.update()
 	require.EqualValues(t, map[string]*keyspacepb.KeyspaceMeta{
 		"ks1": meta2,
 	}, m.keyspaceMap)
@@ -81,9 +79,9 @@ func Test_manager_update(t *testing.T) {
 	}, m.keyspaceIDMap)
 
 	// step 3, lock failed
-	mu.Lock()
-	m.update(mu)
-	mu.Unlock()
+	m.updateMu.Lock()
+	m.update()
+	m.updateMu.Unlock()
 	require.EqualValues(t, map[string]*keyspacepb.KeyspaceMeta{
 		"ks1": meta2,
 	}, m.keyspaceMap)
@@ -101,7 +99,7 @@ func Test_manager_update(t *testing.T) {
 		Config:         map[string]string{},
 	}
 	mockClient.EXPECT().LoadKeyspace(gomock.Any(), gomock.Eq(keyspace)).Return(meta3, nil).Times(1)
-	m.update(mu)
+	m.update()
 	require.EqualValues(t, map[string]*keyspacepb.KeyspaceMeta{
 		"ks1": meta3,
 	}, m.keyspaceMap)
