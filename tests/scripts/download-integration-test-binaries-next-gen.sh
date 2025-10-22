@@ -19,17 +19,8 @@
 set -euo pipefail
 
 # Default values
-DEFAULT_BRANCH=${1:-master}
-
-TIDB_BRANCH=${TIDB_BRANCH:-$DEFAULT_BRANCH}
-TIKV_BRANCH=${TIKV_BRANCH:-$DEFAULT_BRANCH}
-PD_BRANCH=${PD_BRANCH:-$DEFAULT_BRANCH}
-TIFLASH_BRANCH=${TIFLASH_BRANCH:-$DEFAULT_BRANCH}
-
-COMMUNITY=${2:-false}
-VERSION=${3:-v8.5.0}
-OS=${4:-linux}
-ARCH=${5:-amd64}
+OS=${1:-linux}
+ARCH=${2:-amd64}
 
 # Constants
 FILE_SERVER_URL="http://fileserver.pingcap.net"
@@ -56,18 +47,6 @@ download_file() {
 	fi
 	echo ">>> Downloading ${file_name} from ${url}"
 	wget --no-verbose --retry-connrefused --waitretry=1 -t 3 -O "${file_path}" "${url}"
-}
-
-get_sha1() {
-	local repo="$1"
-	local branch="$2"
-	local sha1=$(curl -s "${FILE_SERVER_URL}/download/refs/pingcap/${repo}/${branch}/sha1")
-	if [ $? -ne 0 ] || echo "$sha1" | grep -q "Error"; then
-		echo "Failed to get sha1 for ${repo} branch ${branch}: $sha1. Using default branch ${DEFAULT_BRANCH} instead" >&2
-		branch=$DEFAULT_BRANCH
-		sha1=$(curl -s "${FILE_SERVER_URL}/download/refs/pingcap/${repo}/${branch}/sha1")
-	fi
-	echo "$branch:$sha1"
 }
 
 download_ycsb() {
