@@ -146,7 +146,7 @@ cleanup() {
 
 setup() {
 	cleanup
-	rm -rf ${BIN_DIR}
+	# rm -rf ${BIN_DIR}
 	mkdir -p ${THIRD_BIN_DIR} ${TMP_DIR} ${BIN_DIR}
 }
 
