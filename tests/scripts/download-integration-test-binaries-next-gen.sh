@@ -158,6 +158,9 @@ main() {
 
 	# Move binaries to final location
 	mv ${THIRD_BIN_DIR}/* ./${BIN_DIR}
+	if [ -d "$BIN_DIR/bin" ]; then
+		mv "$BIN_DIR/bin/*" "$BIN_DIR"
+	fi
 
 	cleanup
 	log_green "Download SUCCESS"
