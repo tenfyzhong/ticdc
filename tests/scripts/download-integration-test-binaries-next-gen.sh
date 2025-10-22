@@ -82,7 +82,7 @@ download_binaries() {
 	local schema_registry_url="${FILE_SERVER_URL}/download/builds/pingcap/cdc/schema-registry.tar.gz"
 
 	# Download and extract binaries
-    # download_and_extract "$minio_download_url" "minio.tar.gz"
+	# download_and_extract "$minio_download_url" "minio.tar.gz"
 	download_and_extract "$etcd_download_url" "etcd.tar.gz" "etcd-v3.4.7-linux-amd64/etcdctl"
 	download_and_extract "$sync_diff_inspector_url" "sync_diff_inspector.tar.gz"
 	download_and_extract "$schema_registry_url" "schema-registry.tar.gz"
