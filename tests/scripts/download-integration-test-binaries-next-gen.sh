@@ -121,13 +121,6 @@ download_and_extract() {
 
 	# Move extracted files if necessary
 	case $file_name in
-	"tidb-server.tar.gz") mv ${THIRD_BIN_DIR}/bin/tidb-server ${THIRD_BIN_DIR}/ ;;
-	"pd-server.tar.gz") mv ${THIRD_BIN_DIR}/bin/* ${THIRD_BIN_DIR}/ ;;
-	"tikv-server.tar.gz") mv ${THIRD_BIN_DIR}/bin/tikv-server ${THIRD_BIN_DIR}/ ;;
-	"tiflash.tar.gz")
-		mv ${THIRD_BIN_DIR}/tiflash ${THIRD_BIN_DIR}/_tiflash
-		mv ${THIRD_BIN_DIR}/_tiflash/* ${THIRD_BIN_DIR}/ && rm -rf ${THIRD_BIN_DIR}/_tiflash
-		;;
 	"etcd.tar.gz")
 		mv ${THIRD_BIN_DIR}/etcd-v3.4.7-linux-amd64/etcdctl ${THIRD_BIN_DIR}/
 		rm -rf ${THIRD_BIN_DIR}/etcd-v3.4.7-linux-amd64
@@ -158,10 +151,6 @@ main() {
 
 	# Move binaries to final location
 	mv ${THIRD_BIN_DIR}/* ./${BIN_DIR}
-	if [ -d "$BIN_DIR/bin/" ]; then
-		cp "$BIN_DIR"/bin/* "$BIN_DIR/"
-		rmdir "$BIN_DIR/bin"
-	fi
 
 	cleanup
 	log_green "Download SUCCESS"
