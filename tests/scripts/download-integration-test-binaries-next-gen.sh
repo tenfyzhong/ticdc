@@ -68,21 +68,6 @@ download_jq() {
 	wget -O ${THIRD_BIN_DIR}/jq "$jq_url"
 }
 
-get_latest_tidb_version() {
-	local latest_version="v8.5.2" # fallback version
-	# Try to get latest version from GitHub API
-	if command -v curl &>/dev/null; then
-		latest_version=$(curl -s https://api.github.com/repos/pingcap/tidb/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-	elif command -v wget &>/dev/null; then
-		latest_version=$(wget -qO- https://api.github.com/repos/pingcap/tidb/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-	fi
-	# If version extraction failed, use fallback
-	if [[ ! "$latest_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-		latest_version="v8.5.2"
-	fi
-	echo "$latest_version"
-}
-
 download_binaries() {
 	log_green "Downloading binaries..."
 
@@ -104,12 +89,6 @@ download_binaries() {
 
 	download_file "$go_ycsb_download_url" "go-ycsb" "${THIRD_BIN_DIR}/go-ycsb"
 	download_file "$jq_download_url" "jq" "${THIRD_BIN_DIR}/jq"
-
-	ver=$(get_latest_tidb_version)
-	echo -e "downloading ctl..."
-	wget -O "bin/ctl-$ver-$OS-$ARCH.tar.gz" "https://tiup-mirrors.pingcap.com/ctl-$ver-darwin-$ARCH.tar.gz"
-	tar -C bin/ -xvf "bin/ctl-$ver-darwin-$ARCH.tar.gz"
-	rm -rf "bin/ctl-$ver-darwin-$ARCH.tar.gz"
 
 	chmod a+x ${THIRD_BIN_DIR}/*
 }
