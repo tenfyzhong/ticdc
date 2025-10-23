@@ -49,25 +49,6 @@ download_file() {
 	wget --no-verbose --retry-connrefused --waitretry=1 -t 3 -O "${file_path}" "${url}"
 }
 
-download_ycsb() {
-	local ycsb_file_name="go-ycsb-${OS}-${ARCH}"
-	local ycsb_tar_name="${ycsb_file_name}.tar.gz"
-	local ycsb_url="https://github.com/pingcap/go-ycsb/releases/download/v1.0.0/${ycsb_tar_name}"
-	wget -O "${TMP_DIR}/$ycsb_tar_name" "$ycsb_url"
-	tar -xz -C ${THIRD_BIN_DIR} -f ${TMP_DIR}/$ycsb_tar_name
-}
-
-download_minio() {
-	local minio_url="https://dl.min.io/server/minio/release/${OS}-${ARCH}/minio"
-	download_file "$minio_url" "minio" "${THIRD_BIN_DIR}/minio"
-}
-
-download_jq() {
-	local os_name=$([ "$OS" == "darwin" ] && echo -n "macos" || echo -n "$OS")
-	local jq_url="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-${os_name}-${ARCH}"
-	wget -O ${THIRD_BIN_DIR}/jq "$jq_url"
-}
-
 download_binaries() {
 	log_green "Downloading binaries..."
 
