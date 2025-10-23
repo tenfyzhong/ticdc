@@ -272,6 +272,7 @@ tikv-server \
 	>"$OUT_DIR/log/downstream/tikv/tikv-stdout.log" \
 	2>"$OUT_DIR/log/downstream/tikv/tikv-stderr.log" &
 
+sleep 2
 check_port_available "$UP_TIKV_HOST_1" "$UP_TIKV_PORT_1" "Upstream TiKV is not ready yet"
 check_port_available "$DOWN_TIKV_HOST" "$DOWN_TIKV_PORT" "Downstream TiKV is not ready yet"
 
