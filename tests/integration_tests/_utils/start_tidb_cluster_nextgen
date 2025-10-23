@@ -348,7 +348,6 @@ cat >>"$OUT_DIR/upstream-tidb-system.toml" <<EOF
 keyspace-name = "SYSTEM"
 enable-telemetry = false
 mem-quota-query = 671088640
-new_collations_enabled_on_first_bootstrap = true
 run-auto-analyze = false
 server-memory-quota = 2684354560
 analyze-always-skip-wide-columns = true
@@ -378,7 +377,6 @@ cat >>"$OUT_DIR/upstream-tidb-$KEYSPACE_NAME.toml" <<EOF
 keyspace-name = "$KEYSPACE_NAME"
 enable-telemetry = false
 mem-quota-query = 671088640
-new_collations_enabled_on_first_bootstrap = true
 run-auto-analyze = false
 server-memory-quota = 2684354560
 analyze-always-skip-wide-columns = true
@@ -408,7 +406,6 @@ cat >>"$OUT_DIR/downstream-tidb-system.toml" <<EOF
 keyspace-name = "SYSTEM"
 enable-telemetry = false
 mem-quota-query = 671088640
-new_collations_enabled_on_first_bootstrap = true
 run-auto-analyze = false
 server-memory-quota = 2684354560
 analyze-always-skip-wide-columns = true
@@ -438,7 +435,6 @@ cat >>"$OUT_DIR/downstream-tidb-$KEYSPACE_NAME.toml" <<EOF
 keyspace-name = "$KEYSPACE_NAME"
 enable-telemetry = false
 mem-quota-query = 671088640
-new_collations_enabled_on_first_bootstrap = true
 run-auto-analyze = false
 server-memory-quota = 2684354560
 analyze-always-skip-wide-columns = true
