@@ -204,7 +204,8 @@ check_third_party_binary:
 
 integration_test_build: check_failpoint_ctl storage_consumer kafka_consumer pulsar_consumer oauth2_server
 	$(FAILPOINT_ENABLE)
-	$(GOTEST) -ldflags '$(LDFLAGS)' -c \
+	$(GOTEST) -ldflags '$(LDFLAGS)' -c -cover -covermode=atomic \
+		-coverpkg=github.com/pingcap/ticdc/... \
 		-o bin/cdc.test github.com/pingcap/ticdc/cmd/cdc \
 	|| { $(FAILPOINT_DISABLE); echo "Failed to build cdc.test"; exit 1; }
 	$(GOBUILD) -ldflags '$(LDFLAGS)' -o bin/cdc ./cmd/cdc/main.go \
