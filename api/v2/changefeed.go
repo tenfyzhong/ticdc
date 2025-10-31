@@ -238,6 +238,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		Config:         replicaCfg,
 		State:          config.StateNormal,
 		CreatorVersion: version.ReleaseVersion,
+		KeyspaceID:     keyspaceMeta.Id,
 	}
 
 	// verify sinkURI
