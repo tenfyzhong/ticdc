@@ -234,8 +234,8 @@ func (m *Manager) onAddMaintainerRequest(req *heartbeatpb.AddMaintainerRequest) 
 	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, cfID.Keyspace())
 	if err != nil {
-		// BUG tenfyzhong 2025-09-11 17:29:08 how to process err
 		log.Error("load keyspace meta fail", zap.String("keyspace", cfID.Keyspace()))
+		return nil
 	}
 
 	maintainer := NewMaintainer(cfID, m.conf, info, m.nodeInfo, m.taskScheduler, req.CheckpointTs, req.IsNewChangefeed, keyspaceMeta.Id)
@@ -264,8 +264,8 @@ func (m *Manager) onRemoveMaintainerRequest(msg *messaging.TargetMessage) *heart
 		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 		keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, cfID.Keyspace())
 		if err != nil {
-			// BUG tenfyzhong 2025-09-11 17:29:08 how to process err
 			log.Error("load keyspace meta fail", zap.String("keyspace", cfID.Keyspace()))
+			return nil
 		}
 
 		// it's cascade remove, we should remove the dispatcher from all node
