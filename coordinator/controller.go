@@ -29,6 +29,7 @@ import (
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
+	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/node"
@@ -825,7 +826,7 @@ func (c *Controller) calculateGlobalGCSafepoint() uint64 {
 	return c.changefeedDB.CalculateGlobalGCSafepoint()
 }
 
-func (c *Controller) calculateKeyspaceGCBarrier() map[string]uint64 {
+func (c *Controller) calculateKeyspaceGCBarrier() map[keyspace.Meta]uint64 {
 	return c.changefeedDB.CalculateKeyspaceGCBarrier()
 }
 

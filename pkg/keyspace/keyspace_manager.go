@@ -32,6 +32,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type Meta struct {
+	ID   uint32
+	Name string
+}
+
 type Manager interface {
 	LoadKeyspace(ctx context.Context, keyspace string) (*keyspacepb.KeyspaceMeta, error)
 	GetKeyspaceByID(ctx context.Context, keyspaceID uint32) (*keyspacepb.KeyspaceMeta, error)
