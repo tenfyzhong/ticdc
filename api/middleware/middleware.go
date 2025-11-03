@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/api"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
@@ -239,19 +238,13 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 		}
 
 		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-		meta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
+		_, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
 		if errors.IsKeyspaceNotExistError(err) {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
 			return
 		} else if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, api.NewHTTPError(err))
-			c.Abort()
-			return
-		}
-
-		if meta.State != keyspacepb.KeyspaceState_ENABLED {
-			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
 			return
 		}

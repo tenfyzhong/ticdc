@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/api/middleware"
 	"github.com/pingcap/ticdc/downstreamadapter/sink"
@@ -107,6 +108,12 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
 	if err != nil {
 		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
+		return
+	}
+
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
 		return
 	}
 
@@ -671,6 +678,12 @@ func (h *OpenAPIV2) ResumeChangefeed(c *gin.Context) {
 		return
 	}
 
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
+		return
+	}
+
 	resumeGcServiceID := h.server.GetEtcdClient().GetEnsureGCServiceID(gc.EnsureGCServiceResuming)
 	if err := verifyResumeChangefeedConfig(
 		ctx,
@@ -732,6 +745,18 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	keyspaceName := GetKeyspaceValueWithDefault(c)
+	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
+	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
+	if err != nil {
+		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
+		return
+	}
+
+	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
+		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
+		c.Abort()
+		return
+	}
 
 	changefeedDisplayName := common.NewChangeFeedDisplayName(c.Param(api.APIOpVarChangefeedID), keyspaceName)
 	if err := common.ValidateChangefeedID(changefeedDisplayName.Name); err != nil {
@@ -820,8 +845,6 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 			}
 		}
 		protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
-
-		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 
 		kvStorage, err := keyspaceManager.GetStorage(keyspaceName)
 		if err != nil {
