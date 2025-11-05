@@ -245,6 +245,7 @@ func (c *Changefeed) NewAddMaintainerMessage(server node.ID) *messaging.TargetMe
 			CheckpointTs:    c.GetStatus().CheckpointTs,
 			Config:          c.configBytes,
 			IsNewChangefeed: c.isNew,
+			KeyspaceId:      c.GetInfo().KeyspaceID,
 		})
 }
 

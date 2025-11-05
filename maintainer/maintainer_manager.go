@@ -24,7 +24,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/common"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
-	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/node"
 	"github.com/pingcap/ticdc/utils/threadpool"
@@ -230,15 +229,7 @@ func (m *Manager) onAddMaintainerRequest(req *heartbeatpb.AddMaintainerRequest) 
 			zap.Any("info", info))
 	}
 
-	ctx := context.Background()
-	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, cfID.Keyspace())
-	if err != nil {
-		// BUG tenfyzhong 2025-09-11 17:29:08 how to process err
-		log.Error("load keyspace meta fail", zap.String("keyspace", cfID.Keyspace()))
-	}
-
-	maintainer := NewMaintainer(cfID, m.conf, info, m.nodeInfo, m.taskScheduler, req.CheckpointTs, req.IsNewChangefeed, keyspaceMeta.Id)
+	maintainer := NewMaintainer(cfID, m.conf, info, m.nodeInfo, m.taskScheduler, req.CheckpointTs, req.IsNewChangefeed, req.KeyspaceId)
 	m.maintainers.Store(cfID, maintainer)
 	maintainer.pushEvent(&Event{changefeedID: cfID, eventType: EventInit})
 	return nil
@@ -260,17 +251,11 @@ func (m *Manager) onRemoveMaintainerRequest(msg *messaging.TargetMessage) *heart
 			}
 		}
 
-		ctx := context.Background()
-		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-		keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, cfID.Keyspace())
-		if err != nil {
-			// BUG tenfyzhong 2025-09-11 17:29:08 how to process err
-			log.Error("load keyspace meta fail", zap.String("keyspace", cfID.Keyspace()))
-		}
-
+		// TODO tenfyzhong 2025-11-05 14:24:43 Can we use DefaultKeyspaceID as
+		// the keyspaceID ?
 		// it's cascade remove, we should remove the dispatcher from all node
 		// here we create a maintainer to run the remove the dispatcher logic
-		cf = NewMaintainerForRemove(cfID, m.conf, m.nodeInfo, m.taskScheduler, keyspaceMeta.Id)
+		cf = NewMaintainerForRemove(cfID, m.conf, m.nodeInfo, m.taskScheduler, common.DefaultKeyspaceID)
 		m.maintainers.Store(cfID, cf)
 	}
 	cf.(*Maintainer).pushEvent(&Event{
