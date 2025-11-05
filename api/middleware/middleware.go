@@ -46,7 +46,7 @@ const (
 // ClientVersionHeader is the header name of client version
 const ClientVersionHeader = "X-client-version"
 
-const CtxKeyspaceKey = "ctx-keyspace"
+const ctxKeyspaceKey = "ctx-keyspace"
 
 // ErrorHandleMiddleware puts the error into response
 func ErrorHandleMiddleware() gin.HandlerFunc {
@@ -252,7 +252,7 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set(CtxKeyspaceKey, meta)
+		c.Set(ctxKeyspaceKey, meta)
 
 		c.Next()
 	}
@@ -260,7 +260,7 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 
 func GetKeyspaceFromContext(c *gin.Context) *keyspacepb.KeyspaceMeta {
 	meta := &keyspacepb.KeyspaceMeta{}
-	obj, ok := c.Get(CtxKeyspaceKey)
+	obj, ok := c.Get(ctxKeyspaceKey)
 	if ok {
 		meta, ok = obj.(*keyspacepb.KeyspaceMeta)
 		if ok {
