@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	dmysql "github.com/go-sql-driver/mysql"
@@ -55,14 +56,8 @@ func verify(ctx *gin.Context, etcdCli etcd.Client) error {
 		return errors.ErrCredentialNotFound.GenWithStackByArgs(errMsg)
 	}
 
-	allowed := false
 	serverCfg := config.GetGlobalServerConfig()
-	for _, user := range serverCfg.Security.ClientAllowedUser {
-		if user == username {
-			allowed = true
-			break
-		}
-	}
+	allowed := slices.Contains(serverCfg.Security.ClientAllowedUser, username)
 	if !allowed {
 		errMsg := "The user is not allowed."
 		if username == "" {
