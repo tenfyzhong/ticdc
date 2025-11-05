@@ -1025,6 +1025,7 @@ func (m *Maintainer) createBootstrapMessageFactory() bootstrap.NewBootstrapMessa
 			TableTriggerEventDispatcherId:     nil,
 			RedoTableTriggerEventDispatcherId: nil,
 			IsNewChangefeed:                   false,
+			KeyspaceId:                        m.info.KeyspaceID,
 		}
 
 		// only send dispatcher id to dispatcher manager on the same node
