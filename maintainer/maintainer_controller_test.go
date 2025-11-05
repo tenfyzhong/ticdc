@@ -29,6 +29,7 @@ import (
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
 	"github.com/pingcap/ticdc/pkg/config"
+	"github.com/pingcap/ticdc/pkg/eventservice"
 	"github.com/pingcap/ticdc/pkg/node"
 	"github.com/pingcap/ticdc/pkg/pdutil"
 	"github.com/pingcap/ticdc/pkg/scheduler"
@@ -70,7 +71,7 @@ func TestSchedule(t *testing.T) {
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
 		}, "node1")
-	controller := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 9, time.Minute, common.DefaultKeyspaceID, false)
+	controller := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 9, time.Minute, common.DefaultKeyspace, false)
 	for i := 0; i < 10; i++ {
 		controller.spanController.AddNewTable(commonEvent.Table{
 			SchemaID: 1,
@@ -115,7 +116,7 @@ func TestBalanceGroupsNewNodeAdd_SplitsTableMoreThanNodeNum(t *testing.T) {
 			MinTrafficPercentage:   0.8,
 			MaxTrafficPercentage:   1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 
 	nodeID := node.ID("node1")
 	for i := 0; i < 100; i++ {
@@ -223,7 +224,7 @@ func TestBalanceGroupsNewNodeAdd_SplitsTableLessThanNodeNum(t *testing.T) {
 			MinTrafficPercentage:   0.8,
 			MaxTrafficPercentage:   1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 
 	regionCache := appcontext.GetService[*testutil.MockCache](appcontext.RegionCache)
 
@@ -344,7 +345,7 @@ func TestSplitBalanceGroupsWithNodeRemove(t *testing.T) {
 			MinTrafficPercentage:   0.8,
 			MaxTrafficPercentage:   1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 
 	nodeIDList := []node.ID{"node1", "node2", "node3"}
 	for i := 0; i < 100; i++ {
@@ -444,7 +445,7 @@ func TestSplitTableBalanceWhenTrafficUnbalanced(t *testing.T) {
 			MinTrafficPercentage:   0.8,
 			MaxTrafficPercentage:   1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 
 	nodeIDList := []node.ID{"node1", "node2", "node3"}
 	// make a group
@@ -1029,7 +1030,7 @@ func TestBalance(t *testing.T) {
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
 		}, "node1")
-	s := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	s := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 	for i := 0; i < 100; i++ {
 		sz := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		span := &heartbeatpb.TableSpan{TableID: sz.TableID, StartKey: sz.StartKey, EndKey: sz.EndKey}
@@ -1113,7 +1114,7 @@ func TestDefaultSpanIntoSplit(t *testing.T) {
 			MinTrafficPercentage:       0.8,
 			MaxTrafficPercentage:       1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
 	span := &heartbeatpb.TableSpan{TableID: int64(1), StartKey: totalSpan.StartKey, EndKey: totalSpan.EndKey}
 	dispatcherID := common.NewDispatcherID()
@@ -1254,7 +1255,7 @@ func TestStoppedWhenMoving(t *testing.T) {
 			ComponentStatus: heartbeatpb.ComponentState_Working,
 			CheckpointTs:    1,
 		}, "node1")
-	s := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	s := NewController(cfID, 1, nil, replicaConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 	for i := 0; i < 2; i++ {
 		sz := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(i))
 		span := &heartbeatpb.TableSpan{TableID: sz.TableID, StartKey: sz.StartKey, EndKey: sz.EndKey}
@@ -1306,18 +1307,19 @@ func TestFinishBootstrap(t *testing.T) {
 			CheckpointTs:    1,
 		}, "node1")
 	s := NewController(cfID, 1, &mockThreadPool{},
-		config.GetDefaultReplicaConfig(), ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+		config.GetDefaultReplicaConfig(), ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
 	span := &heartbeatpb.TableSpan{TableID: int64(1), StartKey: totalSpan.StartKey, EndKey: totalSpan.EndKey}
-	schemaStore := &mockSchemaStore{
-		tables: []commonEvent.Table{
+	schemaStore := eventservice.NewMockSchemaStore()
+	schemaStore.SetTables(
+		[]commonEvent.Table{
 			{
 				TableID:         1,
 				SchemaID:        1,
 				SchemaTableName: &commonEvent.SchemaTableName{SchemaName: "test", TableName: "t"},
 			},
 		},
-	}
+	)
 	appcontext.SetService(appcontext.SchemaStore, schemaStore)
 	dispatcherID2 := common.NewDispatcherID()
 	require.False(t, s.bootstrapped)
@@ -1384,12 +1386,14 @@ func TestSplitTableWhenBootstrapFinished(t *testing.T) {
 		MinTrafficPercentage:   0.8,
 		MaxTrafficPercentage:   1.2,
 	}
-	s := NewController(cfID, 1, nil, defaultConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	s := NewController(cfID, 1, nil, defaultConfig, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 	s.taskPool = &mockThreadPool{}
-	schemaStore := &mockSchemaStore{tables: []commonEvent.Table{
-		{TableID: 1, SchemaID: 1, SchemaTableName: &commonEvent.SchemaTableName{SchemaName: "test", TableName: "t"}},
-		{TableID: 2, SchemaID: 2, SchemaTableName: &commonEvent.SchemaTableName{SchemaName: "test", TableName: "t2"}, Splitable: true},
-	}}
+	schemaStore := eventservice.NewMockSchemaStore()
+	schemaStore.SetTables(
+		[]commonEvent.Table{
+			{TableID: 1, SchemaID: 1, SchemaTableName: &commonEvent.SchemaTableName{SchemaName: "test", TableName: "t"}},
+			{TableID: 2, SchemaID: 2, SchemaTableName: &commonEvent.SchemaTableName{SchemaName: "test", TableName: "t2"}, Splitable: true},
+		})
 	appcontext.SetService(appcontext.SchemaStore, schemaStore)
 
 	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, 1)
@@ -1560,7 +1564,7 @@ func TestLargeTableInitialization(t *testing.T) {
 			MinTrafficPercentage:       0.8,
 			MaxTrafficPercentage:       1.2,
 		},
-	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspaceID, false)
+	}, ddlSpan, nil, 1000, 0, common.DefaultKeyspace, false)
 
 	// Create a large table with 10000 regions
 	totalSpan := common.TableIDToComparableSpan(common.DefaultKeyspaceID, int64(1))

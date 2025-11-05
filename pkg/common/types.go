@@ -363,7 +363,7 @@ const (
 	// DefaultKeyspaceNamme is the default keyspace value,
 	// all the old changefeed will be put into default keyspace
 	DefaultKeyspaceNamme = "default"
-	DefaultKeyspaceID    = 0
+	DefaultKeyspaceID    = uint32(0)
 )
 
 var DefaultKeyspace = KeyspaceMeta{
