@@ -164,7 +164,7 @@ func TestChangefeed_NewCheckpointTsMessage(t *testing.T) {
 func TestRemoveMaintainerMessage(t *testing.T) {
 	cfID := common.NewChangeFeedIDWithName("test", common.DefaultKeyspaceNamme)
 	server := node.ID("server-1")
-	msg := RemoveMaintainerMessage(cfID, server, true, true)
+	msg := RemoveMaintainerMessage(common.DefaultKeyspaceID, cfID, server, true, true)
 	require.Equal(t, server, msg.To)
 	require.Equal(t, messaging.MaintainerManagerTopic, msg.Topic)
 }

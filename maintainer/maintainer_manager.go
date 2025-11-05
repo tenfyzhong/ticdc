@@ -238,7 +238,7 @@ func (m *Manager) onAddMaintainerRequest(req *heartbeatpb.AddMaintainerRequest) 
 func (m *Manager) onRemoveMaintainerRequest(msg *messaging.TargetMessage) *heartbeatpb.MaintainerStatus {
 	req := msg.Message[0].(*heartbeatpb.RemoveMaintainerRequest)
 	cfID := common.NewChangefeedIDFromPB(req.GetId())
-	cf, ok := m.maintainers.Load(cfID)
+	maintainer, ok := m.maintainers.Load(cfID)
 	if !ok {
 		if !req.Cascade {
 			log.Warn("ignore remove maintainer request, "+
@@ -251,14 +251,12 @@ func (m *Manager) onRemoveMaintainerRequest(msg *messaging.TargetMessage) *heart
 			}
 		}
 
-		// TODO tenfyzhong 2025-11-05 14:24:43 Can we use DefaultKeyspaceID as
-		// the keyspaceID ?
 		// it's cascade remove, we should remove the dispatcher from all node
 		// here we create a maintainer to run the remove the dispatcher logic
-		cf = NewMaintainerForRemove(cfID, m.conf, m.nodeInfo, m.taskScheduler, common.DefaultKeyspaceID)
-		m.maintainers.Store(cfID, cf)
+		maintainer = NewMaintainerForRemove(cfID, m.conf, m.nodeInfo, m.taskScheduler, req.KeyspaceId)
+		m.maintainers.Store(cfID, maintainer)
 	}
-	cf.(*Maintainer).pushEvent(&Event{
+	maintainer.(*Maintainer).pushEvent(&Event{
 		changefeedID: cfID,
 		eventType:    EventMessage,
 		message:      msg,
