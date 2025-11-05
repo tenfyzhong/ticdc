@@ -205,7 +205,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	}
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
-	kvStorage, err := keyspaceManager.GetStorage(keyspaceName)
+	kvStorage, err := keyspaceManager.GetStorage(keyspaceMeta.Name)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -217,7 +217,10 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	// Therefore, we cannot use the context of the HTTP request.
 	// We create a new context here.
 	schemaCxt := context.Background()
-	if err := schemaStore.RegisterKeyspace(schemaCxt, keyspaceName); err != nil {
+	if err := schemaStore.RegisterKeyspace(schemaCxt, common.KeyspaceMeta{
+		ID:   keyspaceMeta.Id,
+		Name: keyspaceMeta.Name,
+	}); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -1542,12 +1545,12 @@ func getVerifiedTables(
 
 func GetKeyspaceValueWithDefault(c *gin.Context) string {
 	if kerneltype.IsClassic() {
-		return common.DefaultKeyspace
+		return common.DefaultKeyspaceNamme
 	}
 
 	keyspace := c.Query(api.APIOpVarKeyspace)
 	if keyspace == "" {
-		keyspace = common.DefaultKeyspace
+		keyspace = common.DefaultKeyspaceNamme
 	}
 	return keyspace
 }

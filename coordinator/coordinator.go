@@ -26,7 +26,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/config/kerneltype"
 	"github.com/pingcap/ticdc/pkg/errors"
-	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/node"
@@ -464,7 +463,7 @@ func (c *coordinator) updateAllKeyspaceGcBarriers(ctx context.Context) error {
 	return nil
 }
 
-func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, meta keyspace.Meta, barrierTS uint64) error {
+func (c *coordinator) updateKeyspaceGcBarrier(ctx context.Context, meta common.KeyspaceMeta, barrierTS uint64) error {
 	barrierTsUpperBound := barrierTS - 1
 	err := c.gcManager.TryUpdateKeyspaceGCBarrier(ctx, meta.ID, meta.Name, barrierTsUpperBound, false)
 	return errors.Trace(err)
@@ -482,7 +481,7 @@ func (c *coordinator) updateGCSafepointByChangefeed(ctx context.Context, changef
 			return err
 		}
 
-		meta := keyspace.Meta{
+		meta := common.KeyspaceMeta{
 			ID:   cfInfo.KeyspaceID,
 			Name: changefeedID.Keyspace(),
 		}

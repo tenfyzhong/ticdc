@@ -29,7 +29,6 @@ import (
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
-	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/messaging"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/node"
@@ -535,7 +534,16 @@ func (c *Controller) FinishBootstrap(runningChangefeeds map[common.ChangeFeedID]
 			continue
 		}
 
-		err := schemaStore.RegisterKeyspace(ctx, id.Keyspace())
+		cfInfo, _, err := c.GetChangefeed(ctx, id.DisplayName)
+		if err != nil {
+			log.Error("get changefeed failed", zap.Any("changefeed", id), zap.Error(err))
+			continue
+		}
+
+		err = schemaStore.RegisterKeyspace(ctx, common.KeyspaceMeta{
+			ID:   cfInfo.KeyspaceID,
+			Name: id.Keyspace(),
+		})
 		if err != nil {
 			log.Error("RegisterKeyspace failed", zap.String("keyspace", id.Keyspace()), zap.Error(err))
 		}
@@ -826,7 +834,7 @@ func (c *Controller) calculateGlobalGCSafepoint() uint64 {
 	return c.changefeedDB.CalculateGlobalGCSafepoint()
 }
 
-func (c *Controller) calculateKeyspaceGCBarrier() map[keyspace.Meta]uint64 {
+func (c *Controller) calculateKeyspaceGCBarrier() map[common.KeyspaceMeta]uint64 {
 	return c.changefeedDB.CalculateKeyspaceGCBarrier()
 }
 

@@ -21,7 +21,6 @@ import (
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/config"
-	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/metrics"
 	"github.com/pingcap/ticdc/pkg/node"
 	"github.com/pingcap/ticdc/pkg/scheduler/replica"
@@ -319,18 +318,18 @@ func (db *ChangefeedDB) CalculateGlobalGCSafepoint() uint64 {
 }
 
 // CalculateKeyspaceGCBarrier calculates the minimum keyspace-based checkpointTs of all changefeeds that replicating the upstream TiDB cluster.
-func (db *ChangefeedDB) CalculateKeyspaceGCBarrier() map[keyspace.Meta]uint64 {
+func (db *ChangefeedDB) CalculateKeyspaceGCBarrier() map[common.KeyspaceMeta]uint64 {
 	db.lock.RLock()
 	defer db.lock.RUnlock()
 
-	keyspaceGCBarrier := make(map[keyspace.Meta]uint64)
+	keyspaceGCBarrier := make(map[common.KeyspaceMeta]uint64)
 	for _, cf := range db.changefeeds {
 		info := cf.GetInfo()
 		if info == nil || !info.NeedBlockGC() {
 			continue
 		}
 
-		meta := keyspace.Meta{
+		meta := common.KeyspaceMeta{
 			ID:   info.KeyspaceID,
 			Name: cf.ID.Keyspace(),
 		}
