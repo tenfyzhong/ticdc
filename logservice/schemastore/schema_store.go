@@ -251,9 +251,9 @@ func (s *schemaStore) Name() string {
 	return appcontext.SchemaStore
 }
 
-func (s *schemaStore) getKeyspaceSchemaStore(meta common.KeyspaceMeta) (*keyspaceSchemaStore, error) {
+func (s *schemaStore) getKeyspaceSchemaStore(keyspaceMeta common.KeyspaceMeta) (*keyspaceSchemaStore, error) {
 	s.keyspaceLocker.RLock()
-	store, ok := s.keyspaceSchemaStoreMap[meta.ID]
+	store, ok := s.keyspaceSchemaStoreMap[keyspaceMeta.ID]
 	s.keyspaceLocker.RUnlock()
 	if ok {
 		return store, nil
@@ -261,28 +261,25 @@ func (s *schemaStore) getKeyspaceSchemaStore(meta common.KeyspaceMeta) (*keyspac
 
 	ctx := context.Background()
 
-	if err := s.RegisterKeyspace(ctx, meta); err != nil {
+	if err := s.RegisterKeyspace(ctx, keyspaceMeta); err != nil {
 		return nil, err
 	}
 
 	s.keyspaceLocker.RLock()
-	store, ok = s.keyspaceSchemaStoreMap[meta.ID]
+	store, ok = s.keyspaceSchemaStoreMap[keyspaceMeta.ID]
 	s.keyspaceLocker.RUnlock()
 	if ok {
 		return store, nil
 	}
 
-	return nil, errors.ErrKeyspaceNotFound.FastGenByArgs(meta.ID)
+	return nil, errors.ErrKeyspaceNotFound.FastGenByArgs(keyspaceMeta.ID)
 }
 
 func (s *schemaStore) Run(ctx context.Context) error {
 	log.Info("schema store begin to run")
 	// we should fetch ddl at startup for classic mode
 	if kerneltype.IsClassic() {
-		err := s.RegisterKeyspace(ctx, common.KeyspaceMeta{
-			ID:   common.DefaultKeyspaceID,
-			Name: common.DefaultKeyspaceNamme,
-		})
+		err := s.RegisterKeyspace(ctx, common.DefaultKeyspace)
 		if err != nil {
 			// initialize is called when the server starts
 			// if the keyspace register failed, we can panic the server to let
@@ -474,8 +471,7 @@ func (s *schemaStore) RegisterKeyspace(
 	store.pendingResolvedTs.Store(upperBound.ResolvedTs)
 	store.resolvedTs.Store(upperBound.ResolvedTs)
 	log.Info("schema store initialized",
-		zap.String("keyspaceName", keyspaceMeta.Name),
-		zap.Uint32("keyspaceID", keyspaceMeta.ID),
+		zap.Any("keyspace", keyspaceMeta),
 		zap.Uint64("resolvedTs", store.resolvedTs.Load()),
 		zap.Uint64("finishedDDLTS", store.finishedDDLTs),
 		zap.Int64("schemaVersion", store.schemaVersion))
