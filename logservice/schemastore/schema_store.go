@@ -452,7 +452,7 @@ func (s *schemaStore) RegisterKeyspace(
 		return nil
 	}
 
-	kvStorage, err := keyspaceManager.GetStorage(keyspaceMeta.Name)
+	kvStorage, err := keyspaceManager.GetStorage(ctx, keyspaceMeta.Name)
 	if err != nil {
 		return err
 	}
