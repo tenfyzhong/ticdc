@@ -104,12 +104,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		return
 	}
 
-	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
-	if err != nil {
-		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
-		return
-	}
+	keyspaceMeta := middleware.GetKeyspaceFromContext(c)
 
 	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
 		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
@@ -205,6 +200,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 	}
 	protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(replicaCfg.Sink.Protocol))
 
+	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 	kvStorage, err := keyspaceManager.GetStorage(keyspaceMeta.Name)
 	if err != nil {
 		_ = c.Error(err)
@@ -674,12 +670,7 @@ func (h *OpenAPIV2) ResumeChangefeed(c *gin.Context) {
 		newCheckpointTs = cfg.OverwriteCheckpointTs
 	}
 
-	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
-	if err != nil {
-		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
-		return
-	}
+	keyspaceMeta := middleware.GetKeyspaceFromContext(c)
 
 	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
 		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
@@ -748,12 +739,8 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	keyspaceName := GetKeyspaceValueWithDefault(c)
-	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-	keyspaceMeta, err := keyspaceManager.LoadKeyspace(ctx, keyspaceName)
-	if err != nil {
-		_ = c.Error(errors.WrapError(errors.ErrKeyspaceNotFound, err))
-		return
-	}
+
+	keyspaceMeta := middleware.GetKeyspaceFromContext(c)
 
 	if keyspaceMeta.State != keyspacepb.KeyspaceState_ENABLED {
 		c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
@@ -849,6 +836,7 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 		}
 		protocol, _ := config.ParseSinkProtocolFromString(util.GetOrZero(oldCfInfo.Config.Sink.Protocol))
 
+		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
 		kvStorage, err := keyspaceManager.GetStorage(keyspaceName)
 		if err != nil {
 			_ = c.Error(err)

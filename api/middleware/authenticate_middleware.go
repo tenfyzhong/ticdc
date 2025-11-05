@@ -22,11 +22,9 @@ import (
 	dmysql "github.com/go-sql-driver/mysql"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/api"
-	appcontext "github.com/pingcap/ticdc/pkg/common/context"
 	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
-	"github.com/pingcap/ticdc/pkg/keyspace"
 	"github.com/pingcap/ticdc/pkg/server"
 	"github.com/pingcap/ticdc/pkg/sink/mysql"
 	"github.com/pingcap/ticdc/pkg/upstream"
@@ -68,9 +66,11 @@ func verify(ctx *gin.Context, etcdCli etcd.Client) error {
 
 	ks := ctx.Query(api.APIOpVarKeyspace)
 
+	keyspaceMeta := GetKeyspaceFromContext(ctx)
+
 	// verifyTiDBUser verify whether the username and password are valid in TiDB. It does the validation via
 	// the successfully build of a connection with upstream TiDB with the username and password.
-	tidbs, err := fetchTiDBTopology(ctx, etcdCli, ks)
+	tidbs, err := fetchTiDBTopology(ctx, etcdCli, ks, keyspaceMeta.Id)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -96,14 +96,8 @@ func verify(ctx *gin.Context, etcdCli etcd.Client) error {
 }
 
 // fetchTiDBTopology parses the TiDB topology from etcd.
-func fetchTiDBTopology(ctx context.Context, etcdClient etcd.Client, ks string) ([]upstream.TidbInstance, error) {
-	keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-	meta, err := keyspaceManager.LoadKeyspace(ctx, ks)
-	if err != nil {
-		return nil, err
-	}
-
-	return upstream.FetchTiDBTopology(ctx, etcdClient, meta.Id)
+func fetchTiDBTopology(ctx context.Context, etcdClient etcd.Client, ks string, keyspaceID uint32) ([]upstream.TidbInstance, error) {
+	return upstream.FetchTiDBTopology(ctx, etcdClient, keyspaceID)
 }
 
 func doVerify(dsnStr string) error {

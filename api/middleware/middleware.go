@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pingcap/kvproto/pkg/keyspacepb"
 	"github.com/pingcap/log"
 	"github.com/pingcap/ticdc/pkg/api"
 	appcontext "github.com/pingcap/ticdc/pkg/common/context"
@@ -44,6 +45,8 @@ const (
 
 // ClientVersionHeader is the header name of client version
 const ClientVersionHeader = "X-client-version"
+
+const CtxKeyspaceKey = "ctx-keyspace"
 
 // ErrorHandleMiddleware puts the error into response
 func ErrorHandleMiddleware() gin.HandlerFunc {
@@ -238,7 +241,7 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 		}
 
 		keyspaceManager := appcontext.GetService[keyspace.Manager](appcontext.KeyspaceManager)
-		_, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
+		meta, err := keyspaceManager.LoadKeyspace(c.Request.Context(), ks)
 		if errors.IsKeyspaceNotExistError(err) {
 			c.IndentedJSON(http.StatusBadRequest, errors.ErrAPIInvalidParam)
 			c.Abort()
@@ -249,6 +252,20 @@ func KeyspaceCheckerMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		c.Set(CtxKeyspaceKey, meta)
+
 		c.Next()
 	}
+}
+
+func GetKeyspaceFromContext(c *gin.Context) *keyspacepb.KeyspaceMeta {
+	meta := &keyspacepb.KeyspaceMeta{}
+	obj, ok := c.Get(CtxKeyspaceKey)
+	if ok {
+		meta, ok = obj.(*keyspacepb.KeyspaceMeta)
+		if ok {
+			return meta
+		}
+	}
+	return meta
 }
