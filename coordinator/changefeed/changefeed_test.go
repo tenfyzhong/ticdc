@@ -224,3 +224,29 @@ func TestChangefeedGetCloneStatus(t *testing.T) {
 		require.NotSame(t, originalStatus.Err[0], clonedStatus.Err[0])
 	}
 }
+
+func TestChangefeed_GetKeyspaceID(t *testing.T) {
+	var c1 *Changefeed
+	require.Equal(t, uint32(0), c1.GetKeyspaceID())
+
+	cfID := common.ChangeFeedID{
+		Id: common.GID{
+			Low:  1,
+			High: 2,
+		},
+		DisplayName: common.ChangeFeedDisplayName{
+			Name:     "hello",
+			Keyspace: "ks1",
+		},
+	}
+
+	info := &config.ChangeFeedInfo{
+		ChangefeedID: cfID,
+		KeyspaceID:   1,
+	}
+	c2 := &Changefeed{
+		ID:   cfID,
+		info: atomic.NewPointer(info),
+	}
+	require.Equal(t, uint32(1), c2.GetKeyspaceID())
+}

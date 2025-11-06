@@ -137,13 +137,7 @@ func (oc *Controller) StopChangefeed(_ context.Context, cfID common.ChangeFeedID
 	}
 
 	changefeed := oc.changefeedDB.GetByID(cfID)
-	keyspaceID := uint32(0)
-	if changefeed != nil {
-		info := changefeed.GetInfo()
-		if info != nil {
-			keyspaceID = info.KeyspaceID
-		}
-	}
+	keyspaceID := changefeed.GetKeyspaceID()
 
 	oc.pushStopChangefeedOperator(keyspaceID, cfID, scheduledNode, removed)
 }

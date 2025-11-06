@@ -453,7 +453,7 @@ func (c *Controller) handleNonExistentChangefeed(
 			zap.Stringer("sourceNode", from),
 			zap.String("status", common.FormatMaintainerStatus(status)))
 
-		keyspaceID := c.getChangefeed(cfID).GetInfo().KeyspaceID
+		keyspaceID := c.getChangefeed(cfID).GetKeyspaceID()
 
 		// Remove working changefeed from maintainer if it's not in changefeedDB
 		_ = c.messageCenter.SendCommand(changefeed.RemoveMaintainerMessage(keyspaceID, cfID, from, true, true))
@@ -592,7 +592,7 @@ func (c *Controller) FinishBootstrap(runningChangefeeds map[common.ChangeFeedID]
 			zap.String("changefeed", id.Name()),
 			zap.String("node", rm.nodeID.String()),
 		)
-		keyspaceID := c.getChangefeed(id).GetInfo().KeyspaceID
+		keyspaceID := c.getChangefeed(id).GetKeyspaceID()
 		_ = c.messageCenter.SendCommand(changefeed.RemoveMaintainerMessage(keyspaceID, id, rm.nodeID, true, true))
 	}
 
