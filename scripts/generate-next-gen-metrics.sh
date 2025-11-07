@@ -19,6 +19,8 @@ NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_next_gen_userscope.json}
 
 sed 's/namespace/keyspace_name/g' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
 
+echo "Sharedscope dashboard created at '$NEXT_GEN_SHARED_FILE'"
+
 if ! command -v jq &>/dev/null; then
 	echo "Error: jq is not installed. Please install it to run this script." >&2
 	exit 1
@@ -50,4 +52,4 @@ jq '
   .panels |= filter_panels
 ' "$NEXT_GEN_SHARED_FILE" >"$NEXT_GEN_USER_FILE"
 
-echo "Filtered dashboard created at '$NEXT_GEN_USER_FILE'"
+echo "Userscope dashboard created at '$NEXT_GEN_USER_FILE'"
