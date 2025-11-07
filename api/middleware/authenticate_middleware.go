@@ -13,7 +13,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -64,13 +63,11 @@ func verify(ctx *gin.Context, etcdCli etcd.Client) error {
 		return errors.ErrUnauthorized.GenWithStackByArgs(username, errMsg)
 	}
 
-	ks := ctx.Query(api.APIOpVarKeyspace)
-
 	keyspaceMeta := GetKeyspaceFromContext(ctx)
 
 	// verifyTiDBUser verify whether the username and password are valid in TiDB. It does the validation via
 	// the successfully build of a connection with upstream TiDB with the username and password.
-	tidbs, err := fetchTiDBTopology(ctx, etcdCli, ks, keyspaceMeta.Id)
+	tidbs, err := upstream.FetchTiDBTopology(ctx, etcdCli, keyspaceMeta.Id)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -93,11 +90,6 @@ func verify(ctx *gin.Context, etcdCli etcd.Client) error {
 		}
 	}
 	return errors.ErrUnauthorized.GenWithStackByArgs(username, err.Error())
-}
-
-// fetchTiDBTopology parses the TiDB topology from etcd.
-func fetchTiDBTopology(ctx context.Context, etcdClient etcd.Client, ks string, keyspaceID uint32) ([]upstream.TidbInstance, error) {
-	return upstream.FetchTiDBTopology(ctx, etcdClient, keyspaceID)
 }
 
 func doVerify(dsnStr string) error {
