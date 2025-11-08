@@ -481,7 +481,7 @@ func (m *mockPDClient) GetTS(ctx context.Context) (int64, int64, error) {
 }
 
 func (m *mockPDClient) GetServiceDiscovery() servicediscovery.ServiceDiscovery {
-	return servicediscovery.NewMockServiceDiscovery([]string{m.GetLeaderURL()}, nil)
+	return servicediscovery.NewMockServiceDiscovery([]string{}, nil)
 }
 
 //nolint:unparam
