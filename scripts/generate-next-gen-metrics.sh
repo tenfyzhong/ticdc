@@ -15,7 +15,7 @@
 set -euo pipefail
 
 NEXT_GEN_SHARED_FILE="${1:-metrics/grafana/ticdc_new_arch_next_gen.json}"
-NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_next_gen_userscope.json}"
+NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_with_keyspace_name.json}"
 
 sed 's/namespace/keyspace_name/g' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
 
@@ -51,5 +51,8 @@ jq '
     );
   .panels |= filter_panels
 ' "$NEXT_GEN_SHARED_FILE" >"$NEXT_GEN_USER_FILE"
+
+sed -i "s/Test-Cluster-TiCDC-New-Arch/Test-Cluster-TiCDC-New-Arch-KeyspaceName/" "$NEXT_GEN_USER_FILE"
+sed -i "s/YiGL8hBZ0aac/lGT5hED6vqTn/" "$NEXT_GEN_USER_FILE"
 
 echo "Userscope dashboard created at '$NEXT_GEN_USER_FILE'"
