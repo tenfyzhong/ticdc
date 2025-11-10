@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !nextgen
+
 package migrate
 
 import (
@@ -35,6 +37,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tikv/client-go/v2/oracle"
 	pd "github.com/tikv/pd/client"
+	"github.com/tikv/pd/client/servicediscovery"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -477,6 +480,10 @@ func (m *mockPDClient) GetClusterID(ctx context.Context) uint64 {
 // GetTS implements pd.Client.GetTS.
 func (m *mockPDClient) GetTS(ctx context.Context) (int64, int64, error) {
 	return oracle.GetPhysical(time.Now()), 0, nil
+}
+
+func (m *mockPDClient) GetServiceDiscovery() servicediscovery.ServiceDiscovery {
+	return servicediscovery.NewMockServiceDiscovery([]string{}, nil)
 }
 
 //nolint:unparam
