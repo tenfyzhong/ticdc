@@ -277,14 +277,17 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceMeta common.KeyspaceMeta) (
 
 func (s *schemaStore) Run(ctx context.Context) error {
 	log.Info("schema store begin to run")
-	// we should fetch ddl at startup for classic mode
+	// we should register the default keyspace when starting the server in class mode
 	if kerneltype.IsClassic() {
-		err := s.RegisterKeyspace(ctx, common.DefaultKeyspace)
-		if err != nil {
-			// initialize is called when the server starts
-			// if the keyspace register failed, we can panic the server to let
-			// it register again
-			log.Panic("RegisterKeyspace failed", zap.Error(err))
+		times := 0
+		for true {
+			err := s.RegisterKeyspace(ctx, common.DefaultKeyspace)
+			if err == nil {
+				break
+			}
+			times++
+			log.Warn("RegisterKeyspace failed", zap.Int("times", times), zap.Error(err))
+			time.Sleep(2 * time.Second)
 		}
 	}
 	return nil
