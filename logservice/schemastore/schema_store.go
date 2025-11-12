@@ -287,7 +287,13 @@ func (s *schemaStore) Run(ctx context.Context) error {
 			}
 			times++
 			log.Warn("RegisterKeyspace failed", zap.Int("times", times), zap.Error(err))
-			time.Sleep(2 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				log.Warn("RegisterKeyspace context canceled", zap.Error(ctx.Err()))
+				return ctx.Err()
+			case <-time.After(2 * time.Second):
+			}
 		}
 	}
 	return nil
