@@ -277,7 +277,7 @@ func (s *schemaStore) getKeyspaceSchemaStore(keyspaceMeta common.KeyspaceMeta) (
 
 func (s *schemaStore) Run(ctx context.Context) error {
 	log.Info("schema store begin to run")
-	// we should register the default keyspace when starting the server in class mode
+	// we should register the default keyspace when starting the server in classic mode
 	if kerneltype.IsClassic() {
 		times := 0
 		for true {
