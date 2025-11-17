@@ -17,7 +17,19 @@ set -euo pipefail
 NEXT_GEN_SHARED_FILE="${1:-metrics/grafana/ticdc_new_arch_next_gen.json}"
 NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_with_keyspace_name.json}"
 
-sed 's/namespace/keyspace_name/g' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
+# Detect the appropriate sed command
+SED_CMD=""
+if command -v gsed &>/dev/null; then
+	SED_CMD="gsed"
+elif sed --version 2>/dev/null | head -n 1 | grep -q "GNU"; then
+	SED_CMD="sed"
+else
+	echo "This script requires GNU sed." >&2
+	echo "On macOS, you can install it with 'brew install gnu-sed' and use it as 'gsed'." >&2
+	exit 1
+fi
+
+"$SED_CMD" 's/namespace/keyspace_name/g' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
 
 echo "Sharedscope dashboard created at '$NEXT_GEN_SHARED_FILE'"
 
@@ -52,7 +64,7 @@ jq '
   .panels |= filter_panels
 ' "$NEXT_GEN_SHARED_FILE" >"$NEXT_GEN_USER_FILE"
 
-sed -i "s/Test-Cluster-TiCDC-New-Arch/Test-Cluster-TiCDC-New-Arch-KeyspaceName/" "$NEXT_GEN_USER_FILE"
-sed -i "s/YiGL8hBZ0aac/lGT5hED6vqTn/" "$NEXT_GEN_USER_FILE"
+"$SED_CMD" -i "s/Test-Cluster-TiCDC-New-Arch/Test-Cluster-TiCDC-New-Arch-KeyspaceName/" "$NEXT_GEN_USER_FILE"
+"$SED_CMD" -i "s/YiGL8hBZ0aac/lGT5hED6vqTn/" "$NEXT_GEN_USER_FILE"
 
 echo "Userscope dashboard created at '$NEXT_GEN_USER_FILE'"
