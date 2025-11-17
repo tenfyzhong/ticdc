@@ -57,7 +57,7 @@ sed -i "s/YiGL8hBZ0aac/lGT5hED6vqTn/" "$NEXT_GEN_USER_FILE"
 
 echo "Userscope dashboard created at '$NEXT_GEN_USER_FILE'"
 
-sed -i 's/tidb_cluster_id/sharedpool_id/' "$NEXT_GEN_SHARED_FILE"
+sed -i 's/tidb_cluster_id/tidb_cluster/' "$NEXT_GEN_SHARED_FILE"
 sed -i 's/tidb_cluster/sharedpool_id/' "$NEXT_GEN_SHARED_FILE"
 
 echo "Sharedscope dashboard created at '$NEXT_GEN_SHARED_FILE'"
