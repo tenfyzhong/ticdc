@@ -17,7 +17,9 @@ set -euo pipefail
 NEXT_GEN_SHARED_FILE="${1:-metrics/grafana/ticdc_new_arch_next_gen.json}"
 NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_with_keyspace_name.json}"
 
-sed 's/namespace/keyspace_name/g' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
+sed 's/namespace/keyspace_name/g;' metrics/grafana/ticdc_new_arch.json >"$NEXT_GEN_SHARED_FILE"
+sed -i 's/tidb_cluster_id/sharedpool_id/' "$NEXT_GEN_SHARED_FILE"
+sed -i 's/tidb_cluster/sharedpool_id/' "$NEXT_GEN_SHARED_FILE"
 
 echo "Sharedscope dashboard created at '$NEXT_GEN_SHARED_FILE'"
 
