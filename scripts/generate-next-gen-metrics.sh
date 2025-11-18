@@ -64,6 +64,9 @@ jq '
   .panels |= filter_panels
 ' "$NEXT_GEN_SHARED_FILE" >"$NEXT_GEN_USER_FILE"
 
+sed -i "s/Test-Cluster-TiCDC-New-Arch/Test-Cluster-TiCDC-New-Arch-KeyspaceName/" "$NEXT_GEN_USER_FILE"
+sed -i "s/YiGL8hBZ0aac/lGT5hED6vqTn/" "$NEXT_GEN_USER_FILE"
+
 echo "Userscope dashboard created at '$NEXT_GEN_USER_FILE'"
 
 "$SED_CMD" -i 's/tidb_cluster_id/tidb_cluster/' "$NEXT_GEN_SHARED_FILE"
