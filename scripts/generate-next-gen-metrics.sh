@@ -23,7 +23,7 @@ NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_with_keyspace_name.json}
 SED_CMD=""
 if command -v gsed &>/dev/null; then
 	SED_CMD="gsed"
-elif sed --version 2>/dev/null | head -n 1 | grep -q "GNU"; then
+elif [[ $(sed --version 2>/dev/null) == *"GNU"* ]]; then
 	SED_CMD="sed"
 else
 	echo "This script requires GNU sed." >&2
