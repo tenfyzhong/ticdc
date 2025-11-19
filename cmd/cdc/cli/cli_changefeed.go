@@ -17,7 +17,7 @@ import (
 	"os"
 
 	"github.com/pingcap/ticdc/cmd/cdc/factory"
-	"github.com/pingcap/ticdc/pkg/config/kerneltype"
+	"github.com/pingcap/ticdc/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -29,18 +29,9 @@ func newCmdChangefeed(f factory.Factory) *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 	cmds.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if kerneltype.IsNextGen() {
-			if cmd.Flags().Lookup("keyspace") != nil {
-				k, err := cmd.Flags().GetString("keyspace")
-				if err != nil {
-					cmd.PrintErrf("Get keyspace failed: %v\n", err)
-					os.Exit(1)
-				}
-				if k == "" {
-					cmd.PrintErrf("Keyspace not specified\n")
-					os.Exit(1)
-				}
-			}
+		if err := util.CheckKeyspaceFlag(cmd); err != nil {
+			cmd.PrintErr(err)
+			os.Exit(1)
 		}
 	}
 
