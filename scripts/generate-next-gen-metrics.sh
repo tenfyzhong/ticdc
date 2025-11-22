@@ -21,19 +21,12 @@ NEXT_GEN_USER_FILE="${2:-metrics/grafana/ticdc_new_arch_with_keyspace_name.json}
 
 # Determine sed command and in-place edit syntax.
 SED_CMD="sed"
-SED_INPLACE_ARGS=("-i")
-
-GNU_SED=0
-
 if [[ $($SED_CMD --version 2>/dev/null) == *"GNU"* ]]; then
-	GNU_SED=1
-fi
-
-if [ "$GNU_SED" = 0 ]; then
+	echo "using GNU sed"
+	SED_INPLACE_ARGS=("-i")
+else
 	echo "using non-GNU sed"
 	SED_INPLACE_ARGS=("-i" "")
-else
-	echo "using GNU sed"
 fi
 
 "$SED_CMD" 's/namespace/keyspace_name/g;' "$ORIGIN_FILE" >"$NEXT_GEN_SHARED_FILE"
