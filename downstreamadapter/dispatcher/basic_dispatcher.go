@@ -26,6 +26,7 @@ import (
 	"github.com/pingcap/ticdc/heartbeatpb"
 	"github.com/pingcap/ticdc/pkg/common"
 	commonEvent "github.com/pingcap/ticdc/pkg/common/event"
+	"github.com/pingcap/ticdc/pkg/config"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/sink/util"
 	"go.uber.org/zap"
@@ -46,6 +47,7 @@ type DispatcherService interface {
 	EnableSyncPoint() bool
 	GetSyncPointInterval() time.Duration
 	GetSkipSyncpointAtStartTs() bool
+	GetTxnAtomicity() config.AtomicityLevel
 	GetResolvedTs() uint64
 	GetCheckpointTs() uint64
 	HandleEvents(events []DispatcherEvent, wakeCallback func()) (block bool)
@@ -67,6 +69,8 @@ type Dispatcher interface {
 	SetSkipDMLAsStartTs(skipDMLAsStartTs bool)
 	SetComponentStatus(status heartbeatpb.ComponentState)
 	GetRemovingStatus() bool
+	GetTryRemoving() bool
+	SetTryRemoving()
 	GetHeartBeatInfo(h *HeartBeatInfo)
 	GetComponentStatus() heartbeatpb.ComponentState
 	GetBlockStatusesChan() chan *heartbeatpb.TableSpanBlockStatus
@@ -174,6 +178,9 @@ type BasicDispatcher struct {
 	// it's used for sink to calculate the tableNames or TableIds
 	tableSchemaStore *util.TableSchemaStore
 
+	// try to remove the dispatcher, but dispatcher may not able to be removed now
+	tryRemoving atomic.Bool
+	// is able to remove, and removing now
 	isRemoving atomic.Bool
 	// duringHandleEvents is used to indicate whether the dispatcher is currently handling events.
 	// This field prevents a race condition where TryClose is called while events are being processed.
