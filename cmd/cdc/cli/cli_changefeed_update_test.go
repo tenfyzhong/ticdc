@@ -14,15 +14,19 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/log"
 	v2 "github.com/pingcap/ticdc/api/v2"
+	"github.com/pingcap/ticdc/pkg/api"
+	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/config"
 	putil "github.com/pingcap/ticdc/pkg/util"
 	"github.com/stretchr/testify/require"
@@ -169,5 +173,59 @@ func TestChangefeedUpdateCli(t *testing.T) {
 	o.commonChangefeedOptions.sortEngine = "unified"
 	o.changefeedID = "abcd"
 	o.keyspace = "ks"
+	require.NotNil(t, o.run(cmd))
+}
+
+func TestChangefeedUpdateCliWithConfig(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	f := newMockFactory(ctrl)
+	o := newUpdateChangefeedOptions(newChangefeedCommonOptions())
+	o.complete(f)
+	cmd := newCmdUpdateChangefeed(f)
+
+	keyspace := "ks1"
+	name := "cfid"
+	now := time.Now()
+
+	changefeedInfo := &v2.ChangeFeedInfo{
+		UpstreamID:     1,
+		ID:             keyspace,
+		Keyspace:       name,
+		SinkURI:        "blackhole://",
+		CreateTime:     now,
+		StartTs:        0,
+		TargetTs:       0,
+		AdminJobType:   0,
+		Config:         v2.GetDefaultReplicaConfig(),
+		State:          "normal",
+		Error:          nil,
+		CreatorVersion: "v1",
+		ResolvedTs:     0,
+		CheckpointTs:   0,
+		CheckpointTime: api.JSONTime{},
+		TaskStatus:     []config.CaptureTaskStatus{},
+		GID:            common.NewGID(),
+		MaintainerAddr: "127.0.0.1:8300",
+	}
+
+	infoStr, err := json.MarshalIndent(changefeedInfo, "", "  ")
+	require.NoError(t, err)
+	t.Logf("old changefeedInfo config %s\n", infoStr)
+
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "cf.toml")
+	err = os.WriteFile(configPath, []byte(`
+[scheduler]
+enable-table-across-nodes = true
+	`), 0o644)
+	require.NoError(t, err)
+
+	f.changefeeds.EXPECT().Get(gomock.Any(), gomock.Eq(keyspace), gomock.Eq(name)).Return(changefeedInfo, nil)
+	f.changefeeds.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Eq(keyspace), gomock.Eq(name)).Return(nil, nil)
+
+	os.Args = []string{"update", "--no-confirm=true", "--changefeed-id=" + name, "--keyspace=" + keyspace, "--config=" + configPath}
+	o.commonChangefeedOptions.noConfirm = true
+	o.changefeedID = "abc"
 	require.NotNil(t, o.run(cmd))
 }

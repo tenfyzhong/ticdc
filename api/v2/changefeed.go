@@ -789,6 +789,8 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 		return
 	}
 
+	log.Info("update config", zap.Any("updateCfConfig", updateCfConfig))
+
 	var configUpdated, sinkURIUpdated bool
 	if updateCfConfig.TargetTs != 0 {
 		if updateCfConfig.TargetTs <= oldCfInfo.StartTs {
@@ -802,6 +804,7 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 	if updateCfConfig.ReplicaConfig != nil {
 		configUpdated = true
 		oldCfInfo.Config = updateCfConfig.ReplicaConfig.ToInternalReplicaConfig()
+		log.Info("update replicat config", zap.Any("config", oldCfInfo.Config))
 	}
 	if updateCfConfig.SinkURI != "" {
 		sinkURIUpdated = true
@@ -864,6 +867,8 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 		_ = c.Error(errors.WrapError(errors.ErrSinkURIInvalid, err, oldCfInfo.SinkURI))
 		return
 	}
+
+	log.Info("updating change info", zap.Any("oldCfInfo", oldCfInfo))
 
 	if err = co.UpdateChangefeed(ctx, oldCfInfo); err != nil {
 		_ = c.Error(err)
