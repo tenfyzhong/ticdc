@@ -26,7 +26,8 @@ import (
 	"github.com/pingcap/ticdc/pkg/redo"
 	"github.com/pingcap/ticdc/pkg/redo/writer"
 	"github.com/pingcap/ticdc/pkg/redo/writer/factory"
-	"github.com/pingcap/ticdc/pkg/sink/util"
+	sinkutil "github.com/pingcap/ticdc/pkg/sink/util"
+	"github.com/pingcap/ticdc/pkg/util"
 	"github.com/pingcap/ticdc/utils/chann"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -50,7 +51,7 @@ type Sink struct {
 }
 
 func Verify(ctx context.Context, changefeedID common.ChangeFeedID, cfg *config.ConsistentConfig) error {
-	if cfg == nil || !redo.IsConsistentEnabled(cfg.Level) {
+	if cfg == nil || !redo.IsConsistentEnabled(util.GetOrZero(cfg.Level)) {
 		return nil
 	}
 	return nil
@@ -67,7 +68,7 @@ func New(ctx context.Context, changefeedID common.ChangeFeedID,
 			ConsistentConfig:  *cfg,
 			CaptureID:         config.GetGlobalServerConfig().AdvertiseAddr,
 			ChangeFeedID:      changefeedID,
-			MaxLogSizeInBytes: cfg.MaxLogSize * redo.Megabyte,
+			MaxLogSizeInBytes: util.GetOrZero(cfg.MaxLogSize) * redo.Megabyte,
 		},
 		logBuffer:  chann.NewUnlimitedChannelDefault[writer.RedoEvent](),
 		isNormal:   atomic.NewBool(true),
@@ -154,7 +155,7 @@ func (s *Sink) SinkType() common.SinkType {
 	return common.RedoSinkType
 }
 
-func (s *Sink) SetTableSchemaStore(tableSchemaStore *util.TableSchemaStore) {
+func (s *Sink) SetTableSchemaStore(tableSchemaStore *sinkutil.TableSchemaStore) {
 }
 
 func (s *Sink) Close(_ bool) {

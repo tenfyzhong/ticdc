@@ -226,7 +226,7 @@ func (h *OpenAPIV2) CreateChangefeed(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	if !replicaCfg.ForceReplicate && !cfg.ReplicaConfig.IgnoreIneligibleTable {
+	if !util.GetOrZero(replicaCfg.ForceReplicate) && !util.GetOrZero(cfg.ReplicaConfig.IgnoreIneligibleTable) {
 		if len(ineligibleTables) != 0 {
 			_ = c.Error(errors.ErrTableIneligible.GenWithStackByArgs(ineligibleTables))
 			return
@@ -401,8 +401,8 @@ func (h *OpenAPIV2) VerifyTable(c *gin.Context) {
 		return
 	}
 	log.Info("verify table",
-		zap.Bool("forceReplicate", replicaCfg.ForceReplicate),
-		zap.Bool("ignoreIneligibleTable", cfg.ReplicaConfig.IgnoreIneligibleTable),
+		zap.Bool("forceReplicate", util.GetOrZero(replicaCfg.ForceReplicate)),
+		zap.Bool("ignoreIneligibleTable", util.GetOrZero(cfg.ReplicaConfig.IgnoreIneligibleTable)),
 	)
 
 	toAPIModelFunc := func(tbls []string) []TableName {
@@ -853,7 +853,7 @@ func (h *OpenAPIV2) UpdateChangefeed(c *gin.Context) {
 			_ = c.Error(errors.ErrChangefeedUpdateRefused.GenWithStackByCause(err))
 			return
 		}
-		if !oldCfInfo.Config.ForceReplicate && !oldCfInfo.Config.IgnoreIneligibleTable {
+		if !util.GetOrZero(oldCfInfo.Config.ForceReplicate) && !util.GetOrZero(oldCfInfo.Config.IgnoreIneligibleTable) {
 			if len(ineligibleTables) != 0 {
 				_ = c.Error(errors.ErrTableIneligible.GenWithStackByArgs(ineligibleTables))
 				return
@@ -1491,7 +1491,7 @@ func getVerifiedTables(
 	storage tidbkv.Storage, startTs uint64,
 	scheme string, topic string, protocol config.Protocol,
 ) ([]string, []string, error) {
-	f, err := filter.NewFilter(replicaConfig.Filter, "", replicaConfig.CaseSensitive, replicaConfig.ForceReplicate)
+	f, err := filter.NewFilter(replicaConfig.Filter, "", util.GetOrZero(replicaConfig.CaseSensitive), util.GetOrZero(replicaConfig.ForceReplicate))
 	if err != nil {
 		return nil, nil, err
 	}

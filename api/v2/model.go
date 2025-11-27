@@ -184,29 +184,29 @@ func (d *JSONDuration) UnmarshalJSON(b []byte) error {
 
 // ReplicaConfig is a duplicate of  config.ReplicaConfig
 type ReplicaConfig struct {
-	MemoryQuota           uint64 `json:"memory_quota"`
-	CaseSensitive         bool   `json:"case_sensitive"`
-	ForceReplicate        bool   `json:"force_replicate"`
-	IgnoreIneligibleTable bool   `json:"ignore_ineligible_table"`
-	CheckGCSafePoint      bool   `json:"check_gc_safe_point"`
-	EnableSyncPoint       *bool  `json:"enable_sync_point,omitempty"`
-	EnableTableMonitor    *bool  `json:"enable_table_monitor,omitempty"`
-	BDRMode               *bool  `json:"bdr_mode,omitempty"`
+	MemoryQuota           *uint64 `json:"memory_quota,omitempty"`
+	CaseSensitive         *bool   `json:"case_sensitive,omitempty"`
+	ForceReplicate        *bool   `json:"force_replicate,omitempty"`
+	IgnoreIneligibleTable *bool   `json:"ignore_ineligible_table,omitempty"`
+	CheckGCSafePoint      *bool   `json:"check_gc_safe_point,omitempty"`
+	EnableSyncPoint       *bool   `json:"enable_sync_point,omitempty"`
+	EnableTableMonitor    *bool   `json:"enable_table_monitor,omitempty"`
+	BDRMode               *bool   `json:"bdr_mode,omitempty"`
 
 	SyncPointInterval  *JSONDuration `json:"sync_point_interval,omitempty"`
 	SyncPointRetention *JSONDuration `json:"sync_point_retention,omitempty"`
 
-	Filter                       *FilterConfig              `json:"filter"`
-	Mounter                      *MounterConfig             `json:"mounter"`
-	Sink                         *SinkConfig                `json:"sink"`
+	Filter                       *FilterConfig              `json:"filter,omitempty"`
+	Mounter                      *MounterConfig             `json:"mounter,omitempty"`
+	Sink                         *SinkConfig                `json:"sink,omitempty"`
 	Consistent                   *ConsistentConfig          `json:"consistent,omitempty"`
-	Scheduler                    *ChangefeedSchedulerConfig `json:"scheduler"`
-	Integrity                    *IntegrityConfig           `json:"integrity"`
+	Scheduler                    *ChangefeedSchedulerConfig `json:"scheduler,omitempty"`
+	Integrity                    *IntegrityConfig           `json:"integrity,omitempty"`
 	ChangefeedErrorStuckDuration *JSONDuration              `json:"changefeed_error_stuck_duration,omitempty"`
 	SyncedStatus                 *SyncedStatusConfig        `json:"synced_status,omitempty"`
 
 	// Deprecated: we don't use this field since v8.0.0.
-	SQLMode string `json:"sql_mode,omitempty"`
+	SQLMode *string `json:"sql_mode,omitempty"`
 }
 
 // ToInternalReplicaConfig coverts *v2.ReplicaConfig into *config.ReplicaConfig
@@ -218,13 +218,23 @@ func (c *ReplicaConfig) ToInternalReplicaConfig() *config.ReplicaConfig {
 func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 	res *config.ReplicaConfig,
 ) *config.ReplicaConfig {
-	res.MemoryQuota = c.MemoryQuota
-	res.CaseSensitive = c.CaseSensitive
-	res.ForceReplicate = c.ForceReplicate
-	res.CheckGCSafePoint = c.CheckGCSafePoint
+	if c.MemoryQuota != nil {
+		res.MemoryQuota = c.MemoryQuota
+	}
+	if c.CaseSensitive != nil {
+		res.CaseSensitive = c.CaseSensitive
+	}
+	if c.ForceReplicate != nil {
+		res.ForceReplicate = c.ForceReplicate
+	}
+	if c.CheckGCSafePoint != nil {
+		res.CheckGCSafePoint = c.CheckGCSafePoint
+	}
 	res.EnableSyncPoint = c.EnableSyncPoint
 	res.EnableTableMonitor = c.EnableTableMonitor
-	res.IgnoreIneligibleTable = c.IgnoreIneligibleTable
+	if c.IgnoreIneligibleTable != nil {
+		res.IgnoreIneligibleTable = c.IgnoreIneligibleTable
+	}
 	if c.SyncPointInterval != nil {
 		res.SyncPointInterval = &c.SyncPointInterval.duration
 	}
@@ -248,18 +258,38 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		}
 	}
 	if c.Consistent != nil {
-		res.Consistent = &config.ConsistentConfig{
-			Level:                 c.Consistent.Level,
-			MaxLogSize:            c.Consistent.MaxLogSize,
-			FlushIntervalInMs:     c.Consistent.FlushIntervalInMs,
-			MetaFlushIntervalInMs: c.Consistent.MetaFlushIntervalInMs,
-			EncodingWorkerNum:     c.Consistent.EncodingWorkerNum,
-			FlushWorkerNum:        c.Consistent.FlushWorkerNum,
-			Storage:               c.Consistent.Storage,
-			UseFileBackend:        c.Consistent.UseFileBackend,
-			Compression:           c.Consistent.Compression,
-			FlushConcurrency:      c.Consistent.FlushConcurrency,
+		res.Consistent = &config.ConsistentConfig{}
+		if c.Consistent.Level != nil {
+			res.Consistent.Level = c.Consistent.Level
 		}
+		if c.Consistent.MaxLogSize != nil {
+			res.Consistent.MaxLogSize = c.Consistent.MaxLogSize
+		}
+		if c.Consistent.FlushIntervalInMs != nil {
+			res.Consistent.FlushIntervalInMs = c.Consistent.FlushIntervalInMs
+		}
+		if c.Consistent.MetaFlushIntervalInMs != nil {
+			res.Consistent.MetaFlushIntervalInMs = c.Consistent.MetaFlushIntervalInMs
+		}
+		if c.Consistent.EncodingWorkerNum != nil {
+			res.Consistent.EncodingWorkerNum = c.Consistent.EncodingWorkerNum
+		}
+		if c.Consistent.FlushWorkerNum != nil {
+			res.Consistent.FlushWorkerNum = c.Consistent.FlushWorkerNum
+		}
+		if c.Consistent.Storage != nil {
+			res.Consistent.Storage = c.Consistent.Storage
+		}
+		if c.Consistent.UseFileBackend != nil {
+			res.Consistent.UseFileBackend = c.Consistent.UseFileBackend
+		}
+		if c.Consistent.Compression != nil {
+			res.Consistent.Compression = c.Consistent.Compression
+		}
+		if c.Consistent.FlushConcurrency != nil {
+			res.Consistent.FlushConcurrency = c.Consistent.FlushConcurrency
+		}
+
 		if c.Consistent.MemoryUsage != nil {
 			res.Consistent.MemoryUsage = &config.ConsistentMemoryUsage{
 				MemoryQuotaPercentage: c.Consistent.MemoryUsage.MemoryQuotaPercentage,
@@ -504,27 +534,48 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		}
 	}
 	if c.Mounter != nil {
-		res.Mounter = &config.MounterConfig{
-			WorkerNum: c.Mounter.WorkerNum,
+		res.Mounter = &config.MounterConfig{}
+		if c.Mounter.WorkerNum != nil {
+			res.Mounter.WorkerNum = *c.Mounter.WorkerNum
 		}
 	}
 	if c.Scheduler != nil {
-		res.Scheduler = &config.ChangefeedSchedulerConfig{
-			EnableTableAcrossNodes:     c.Scheduler.EnableTableAcrossNodes,
-			RegionThreshold:            c.Scheduler.RegionThreshold,
-			RegionCountPerSpan:         c.Scheduler.RegionCountPerSpan,
-			WriteKeyThreshold:          c.Scheduler.WriteKeyThreshold,
-			SchedulingTaskCountPerNode: c.Scheduler.SchedulingTaskCountPerNode,
-			EnableSplittableCheck:      c.Scheduler.EnableSplittableCheck,
-			BalanceScoreThreshold:      c.Scheduler.BalanceScoreThreshold,
-			MinTrafficPercentage:       c.Scheduler.MinTrafficPercentage,
-			MaxTrafficPercentage:       c.Scheduler.MaxTrafficPercentage,
+		res.Scheduler = &config.ChangefeedSchedulerConfig{}
+		if c.Scheduler.EnableTableAcrossNodes != nil {
+			res.Scheduler.EnableTableAcrossNodes = c.Scheduler.EnableTableAcrossNodes
+		}
+		if c.Scheduler.RegionThreshold != nil {
+			res.Scheduler.RegionThreshold = c.Scheduler.RegionThreshold
+		}
+		if c.Scheduler.RegionCountPerSpan != nil {
+			res.Scheduler.RegionCountPerSpan = c.Scheduler.RegionCountPerSpan
+		}
+		if c.Scheduler.WriteKeyThreshold != nil {
+			res.Scheduler.WriteKeyThreshold = c.Scheduler.WriteKeyThreshold
+		}
+		if c.Scheduler.SchedulingTaskCountPerNode != nil {
+			res.Scheduler.SchedulingTaskCountPerNode = c.Scheduler.SchedulingTaskCountPerNode
+		}
+		if c.Scheduler.EnableSplittableCheck != nil {
+			res.Scheduler.EnableSplittableCheck = c.Scheduler.EnableSplittableCheck
+		}
+		if c.Scheduler.BalanceScoreThreshold != nil {
+			res.Scheduler.BalanceScoreThreshold = c.Scheduler.BalanceScoreThreshold
+		}
+		if c.Scheduler.MinTrafficPercentage != nil {
+			res.Scheduler.MinTrafficPercentage = c.Scheduler.MinTrafficPercentage
+		}
+		if c.Scheduler.MaxTrafficPercentage != nil {
+			res.Scheduler.MaxTrafficPercentage = c.Scheduler.MaxTrafficPercentage
 		}
 	}
 	if c.Integrity != nil {
-		res.Integrity = &integrity.Config{
-			IntegrityCheckLevel:   c.Integrity.IntegrityCheckLevel,
-			CorruptionHandleLevel: c.Integrity.CorruptionHandleLevel,
+		res.Integrity = &integrity.Config{}
+		if c.Integrity.IntegrityCheckLevel != nil {
+			res.Integrity.IntegrityCheckLevel = c.Integrity.IntegrityCheckLevel
+		}
+		if c.Integrity.CorruptionHandleLevel != nil {
+			res.Integrity.CorruptionHandleLevel = c.Integrity.CorruptionHandleLevel
 		}
 	}
 	if c.ChangefeedErrorStuckDuration != nil {
@@ -834,7 +885,7 @@ func ToAPIReplicaConfig(c *config.ReplicaConfig) *ReplicaConfig {
 
 	if cloned.Mounter != nil {
 		res.Mounter = &MounterConfig{
-			WorkerNum: cloned.Mounter.WorkerNum,
+			WorkerNum: &cloned.Mounter.WorkerNum,
 		}
 	}
 	if cloned.Scheduler != nil {
@@ -884,7 +935,7 @@ type FilterConfig struct {
 
 // MounterConfig represents mounter config for a changefeed
 type MounterConfig struct {
-	WorkerNum int `json:"worker_num"`
+	WorkerNum *int `json:"worker_num,omitempty"`
 }
 
 // EventFilterRule is used by sql event filter and expression filter
@@ -905,10 +956,10 @@ func (e EventFilterRule) ToInternalEventFilterRule() *config.EventFilterRule {
 	res := &config.EventFilterRule{
 		Matcher:                  e.Matcher,
 		IgnoreSQL:                e.IgnoreSQL,
-		IgnoreInsertValueExpr:    e.IgnoreInsertValueExpr,
-		IgnoreUpdateNewValueExpr: e.IgnoreUpdateNewValueExpr,
-		IgnoreUpdateOldValueExpr: e.IgnoreUpdateOldValueExpr,
-		IgnoreDeleteValueExpr:    e.IgnoreDeleteValueExpr,
+		IgnoreInsertValueExpr:    &e.IgnoreInsertValueExpr,
+		IgnoreUpdateNewValueExpr: &e.IgnoreUpdateNewValueExpr,
+		IgnoreUpdateOldValueExpr: &e.IgnoreUpdateOldValueExpr,
+		IgnoreDeleteValueExpr:    &e.IgnoreDeleteValueExpr,
 	}
 	if len(e.IgnoreEvent) != 0 {
 		res.IgnoreEvent = make([]bf.EventType, len(e.IgnoreEvent))
@@ -922,10 +973,10 @@ func (e EventFilterRule) ToInternalEventFilterRule() *config.EventFilterRule {
 // ToAPIEventFilterRule converts *config.EventFilterRule to API EventFilterRule
 func ToAPIEventFilterRule(er *config.EventFilterRule) EventFilterRule {
 	res := EventFilterRule{
-		IgnoreInsertValueExpr:    er.IgnoreInsertValueExpr,
-		IgnoreUpdateNewValueExpr: er.IgnoreUpdateNewValueExpr,
-		IgnoreUpdateOldValueExpr: er.IgnoreUpdateOldValueExpr,
-		IgnoreDeleteValueExpr:    er.IgnoreDeleteValueExpr,
+		IgnoreInsertValueExpr:    util.GetOrZero(er.IgnoreInsertValueExpr),
+		IgnoreUpdateNewValueExpr: util.GetOrZero(er.IgnoreUpdateNewValueExpr),
+		IgnoreUpdateOldValueExpr: util.GetOrZero(er.IgnoreUpdateOldValueExpr),
+		IgnoreDeleteValueExpr:    util.GetOrZero(er.IgnoreDeleteValueExpr),
 	}
 	if len(er.Matcher) != 0 {
 		res.Matcher = make([]string, len(er.Matcher))
@@ -1028,18 +1079,18 @@ type ColumnSelector struct {
 // ConsistentConfig represents replication consistency config for a changefeed
 // This is a duplicate of config.ConsistentConfig
 type ConsistentConfig struct {
-	Level                 string `json:"level,omitempty"`
-	MaxLogSize            int64  `json:"max_log_size"`
-	FlushIntervalInMs     int64  `json:"flush_interval"`
-	MetaFlushIntervalInMs int64  `json:"meta_flush_interval"`
-	EncodingWorkerNum     int    `json:"encoding_worker_num"`
-	FlushWorkerNum        int    `json:"flush_worker_num"`
-	Storage               string `json:"storage,omitempty"`
-	UseFileBackend        bool   `json:"use_file_backend"`
-	Compression           string `json:"compression,omitempty"`
-	FlushConcurrency      int    `json:"flush_concurrency,omitempty"`
+	Level                 *string `json:"level,omitempty"`
+	MaxLogSize            *int64  `json:"max_log_size,omitempty"`
+	FlushIntervalInMs     *int64  `json:"flush_interval,omitempty"`
+	MetaFlushIntervalInMs *int64  `json:"meta_flush_interval,omitempty"`
+	EncodingWorkerNum     *int    `json:"encoding_worker_num,omitempty"`
+	FlushWorkerNum        *int    `json:"flush_worker_num,omitempty"`
+	Storage               *string `json:"storage,omitempty"`
+	UseFileBackend        *bool   `json:"use_file_backend,omitempty"`
+	Compression           *string `json:"compression,omitempty"`
+	FlushConcurrency      *int    `json:"flush_concurrency,omitempty"`
 
-	MemoryUsage *ConsistentMemoryUsage `json:"memory_usage"`
+	MemoryUsage *ConsistentMemoryUsage `json:"memory_usage,omitempty"`
 }
 
 // ConsistentMemoryUsage represents memory usage of Consistent module.
@@ -1052,34 +1103,34 @@ type ConsistentMemoryUsage struct {
 type ChangefeedSchedulerConfig struct {
 	// EnableTableAcrossNodes set true to split one table to multiple spans and
 	// distribute to multiple TiCDC nodes.
-	EnableTableAcrossNodes bool `json:"enable_table_across_nodes"`
+	EnableTableAcrossNodes *bool `json:"enable_table_across_nodes,omitempty"`
 	// RegionThreshold is the region count threshold of splitting a table.
-	RegionThreshold int `json:"region_threshold"`
+	RegionThreshold *int `json:"region_threshold,omitempty"`
 	// RegionCountPerSpan is the maximax region count for each span when first splitted by RegionCountSpliiter
-	RegionCountPerSpan int `json:"region_count_per_span"`
+	RegionCountPerSpan *int `json:"region_count_per_span,omitempty"`
 	// WriteKeyThreshold is the written keys threshold of splitting a table.
-	WriteKeyThreshold int `json:"write_key_threshold"`
+	WriteKeyThreshold *int `json:"write_key_threshold,omitempty"`
 	// SchedulingTaskCountPerNode is the upper limit for scheduling tasks each node.
-	SchedulingTaskCountPerNode int `json:"scheduling_task_count_per_node"`
+	SchedulingTaskCountPerNode *int `json:"scheduling_task_count_per_node,omitempty"`
 	// EnableSplittableCheck controls whether to check if a table is splittable before splitting.
 	// If true, only tables with primary key and no unique key can be split.
 	// If false, all tables can be split without checking.
 	// For MySQL downstream, this is always set to true for data consistency.
-	EnableSplittableCheck bool `json:"enable_splittable_check"`
+	EnableSplittableCheck *bool `json:"enable_splittable_check,omitempty"`
 	// These config is used for adjust the frequency of balancing traffic.
 	// BalanceScoreThreshold is the score threshold for balancing traffic. Larger value means less frequent balancing.
-	BalanceScoreThreshold int `json:"balance_score_threshold"`
+	BalanceScoreThreshold *int `json:"balance_score_threshold,omitempty"`
 	// MinTrafficPercentage is the minimum traffic percentage for balancing traffic. Larger value means less frequent balancing.
-	MinTrafficPercentage float64 `json:"min_traffic_percentage"`
+	MinTrafficPercentage *float64 `json:"min_traffic_percentage,omitempty"`
 	// MaxTrafficPercentage is the maximum traffic percentage for balancing traffic. Less value means less frequent balancing.
-	MaxTrafficPercentage float64 `json:"max_traffic_percentage"`
+	MaxTrafficPercentage *float64 `json:"max_traffic_percentage,omitempty"`
 }
 
 // IntegrityConfig is the config for integrity check
 // This is a duplicate of Integrity.Config
 type IntegrityConfig struct {
-	IntegrityCheckLevel   string `json:"integrity_check_level"`
-	CorruptionHandleLevel string `json:"corruption_handle_level"`
+	IntegrityCheckLevel   *string `json:"integrity_check_level,omitempty"`
+	CorruptionHandleLevel *string `json:"corruption_handle_level,omitempty"`
 }
 
 // EtcdData contains key/value pair of etcd data
