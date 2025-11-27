@@ -21929,13 +21929,13 @@
         "error": null,
         "hide": 0,
         "includeAll": false,
-        "label": "tidb_cluster",
+        "label": "sharedpool_id",
         "multi": false,
-        "name": "tidb_cluster",
+        "name": "sharedpool_id",
         "options": [],
         "query": {
-          "query": "label_values(go_goroutines{k8s_cluster=\"$k8s_cluster\"}, tidb_cluster)",
-          "refId": "local-tidb_cluster-Variable-Query"
+          "query": "label_values(go_goroutines{k8s_cluster=\"$k8s_cluster\"}, sharedpool_id)",
+          "refId": "local-sharedpool_id-Variable-Query"
         },
         "refresh": 2,
         "regex": "",
