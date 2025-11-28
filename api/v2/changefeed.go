@@ -1418,12 +1418,14 @@ func (h *OpenAPIV2) synced(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	if info.Config.SyncedStatus.SyncedCheckInterval == 0 || info.Config.SyncedStatus.CheckpointInterval == 0 {
-		info.Config.SyncedStatus.SyncedCheckInterval = config.GetDefaultReplicaConfig().SyncedStatus.SyncedCheckInterval
-		info.Config.SyncedStatus.CheckpointInterval = config.GetDefaultReplicaConfig().SyncedStatus.CheckpointInterval
+
+	syncedCheckInterval := util.GetOrZero(info.Config.SyncedStatus.SyncedCheckInterval)
+	checkpointInterval := util.GetOrZero(info.Config.SyncedStatus.CheckpointInterval)
+
+	if syncedCheckInterval == 0 || checkpointInterval == 0 {
+		syncedCheckInterval = util.GetOrZero(config.GetDefaultReplicaConfig().SyncedStatus.SyncedCheckInterval)
+		checkpointInterval = util.GetOrZero(config.GetDefaultReplicaConfig().SyncedStatus.CheckpointInterval)
 	}
-	syncedCheckInterval := info.Config.SyncedStatus.SyncedCheckInterval
-	checkpointInterval := info.Config.SyncedStatus.CheckpointInterval
 
 	// get time from pd
 	ctx := c.Request.Context()

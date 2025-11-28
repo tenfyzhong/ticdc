@@ -105,10 +105,10 @@ type ChangefeedCommonInfo struct {
 // SyncedStatusConfig represents synced check interval config for a changefeed
 type SyncedStatusConfig struct {
 	// The minimum interval between the latest synced ts and now required to reach synced state
-	SyncedCheckInterval int64 `json:"synced_check_interval"`
+	SyncedCheckInterval *int64 `json:"synced_check_interval"`
 	// The maximum interval between latest checkpoint ts and now or
 	// between latest sink's checkpoint ts and puller's checkpoint ts required to reach synced state
-	CheckpointInterval int64 `json:"checkpoint_interval"`
+	CheckpointInterval *int64 `json:"checkpoint_interval"`
 }
 
 // MarshalJSON marshal changefeed common info to json
@@ -241,15 +241,14 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 	if c.SyncPointRetention != nil {
 		res.SyncPointRetention = &c.SyncPointRetention.duration
 	}
-	res.BDRMode = c.BDRMode
+	if c.BDRMode != nil {
+		res.BDRMode = c.BDRMode
+	}
 
 	if c.Filter != nil {
-		var efs []*config.EventFilterRule
-		if len(c.Filter.EventFilters) != 0 {
-			efs = make([]*config.EventFilterRule, len(c.Filter.EventFilters))
-			for i, ef := range c.Filter.EventFilters {
-				efs[i] = ef.ToInternalEventFilterRule()
-			}
+		efs := make([]*config.EventFilterRule, 0, len(c.Filter.EventFilters))
+		for _, ef := range c.Filter.EventFilters {
+			efs = append(efs, ef.ToInternalEventFilterRule())
 		}
 		res.Filter = &config.FilterConfig{
 			Rules:            c.Filter.Rules,
@@ -258,7 +257,10 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		}
 	}
 	if c.Consistent != nil {
-		res.Consistent = &config.ConsistentConfig{}
+		if res.Consistent == nil {
+			res.Consistent = &config.ConsistentConfig{}
+		}
+
 		if c.Consistent.Level != nil {
 			res.Consistent.Level = c.Consistent.Level
 		}
@@ -534,13 +536,19 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		}
 	}
 	if c.Mounter != nil {
-		res.Mounter = &config.MounterConfig{}
+		if res.Mounter == nil {
+			res.Mounter = &config.MounterConfig{}
+		}
+
 		if c.Mounter.WorkerNum != nil {
 			res.Mounter.WorkerNum = *c.Mounter.WorkerNum
 		}
 	}
 	if c.Scheduler != nil {
-		res.Scheduler = &config.ChangefeedSchedulerConfig{}
+		if res.Scheduler == nil {
+			res.Scheduler = &config.ChangefeedSchedulerConfig{}
+		}
+
 		if c.Scheduler.EnableTableAcrossNodes != nil {
 			res.Scheduler.EnableTableAcrossNodes = c.Scheduler.EnableTableAcrossNodes
 		}
@@ -570,7 +578,10 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		}
 	}
 	if c.Integrity != nil {
-		res.Integrity = &integrity.Config{}
+		if res.Integrity == nil {
+			res.Integrity = &integrity.Config{}
+		}
+
 		if c.Integrity.IntegrityCheckLevel != nil {
 			res.Integrity.IntegrityCheckLevel = c.Integrity.IntegrityCheckLevel
 		}
@@ -582,9 +593,15 @@ func (c *ReplicaConfig) toInternalReplicaConfigWithOriginConfig(
 		res.ChangefeedErrorStuckDuration = &c.ChangefeedErrorStuckDuration.duration
 	}
 	if c.SyncedStatus != nil {
-		res.SyncedStatus = &config.SyncedStatusConfig{
-			SyncedCheckInterval: c.SyncedStatus.SyncedCheckInterval,
-			CheckpointInterval:  c.SyncedStatus.CheckpointInterval,
+		if res.SyncedStatus == nil {
+			res.SyncedStatus = &config.SyncedStatusConfig{}
+		}
+
+		if c.SyncedStatus.SyncedCheckInterval != nil {
+			res.SyncedStatus.SyncedCheckInterval = c.SyncedStatus.SyncedCheckInterval
+		}
+		if c.SyncedStatus.CheckpointInterval != nil {
+			res.SyncedStatus.CheckpointInterval = c.SyncedStatus.CheckpointInterval
 		}
 	}
 	return res
@@ -614,12 +631,9 @@ func ToAPIReplicaConfig(c *config.ReplicaConfig) *ReplicaConfig {
 	}
 
 	if cloned.Filter != nil {
-		var efs []EventFilterRule
-		if len(c.Filter.EventFilters) != 0 {
-			efs = make([]EventFilterRule, len(c.Filter.EventFilters))
-			for i, ef := range c.Filter.EventFilters {
-				efs[i] = ToAPIEventFilterRule(ef)
-			}
+		efs := make([]EventFilterRule, 0, len(cloned.Filter.EventFilters))
+		for _, ef := range cloned.Filter.EventFilters {
+			efs = append(efs, ToAPIEventFilterRule(ef))
 		}
 
 		res.Filter = &FilterConfig{
@@ -864,17 +878,39 @@ func ToAPIReplicaConfig(c *config.ReplicaConfig) *ReplicaConfig {
 		}
 	}
 	if cloned.Consistent != nil {
-		res.Consistent = &ConsistentConfig{
-			Level:                 cloned.Consistent.Level,
-			MaxLogSize:            cloned.Consistent.MaxLogSize,
-			FlushIntervalInMs:     cloned.Consistent.FlushIntervalInMs,
-			MetaFlushIntervalInMs: cloned.Consistent.MetaFlushIntervalInMs,
-			EncodingWorkerNum:     c.Consistent.EncodingWorkerNum,
-			FlushWorkerNum:        c.Consistent.FlushWorkerNum,
-			Storage:               cloned.Consistent.Storage,
-			UseFileBackend:        cloned.Consistent.UseFileBackend,
-			Compression:           cloned.Consistent.Compression,
-			FlushConcurrency:      cloned.Consistent.FlushConcurrency,
+		if res.Consistent == nil {
+			res.Consistent = &ConsistentConfig{}
+		}
+
+		if cloned.Consistent.Level != nil {
+			res.Consistent.Level = cloned.Consistent.Level
+		}
+		if cloned.Consistent.MaxLogSize != nil {
+			res.Consistent.MaxLogSize = cloned.Consistent.MaxLogSize
+		}
+		if cloned.Consistent.FlushIntervalInMs != nil {
+			res.Consistent.FlushIntervalInMs = cloned.Consistent.FlushIntervalInMs
+		}
+		if cloned.Consistent.MetaFlushIntervalInMs != nil {
+			res.Consistent.MetaFlushIntervalInMs = cloned.Consistent.MetaFlushIntervalInMs
+		}
+		if cloned.Consistent.EncodingWorkerNum != nil {
+			res.Consistent.EncodingWorkerNum = cloned.Consistent.EncodingWorkerNum
+		}
+		if cloned.Consistent.FlushWorkerNum != nil {
+			res.Consistent.FlushWorkerNum = cloned.Consistent.FlushWorkerNum
+		}
+		if cloned.Consistent.Storage != nil {
+			res.Consistent.Storage = cloned.Consistent.Storage
+		}
+		if cloned.Consistent.UseFileBackend != nil {
+			res.Consistent.UseFileBackend = cloned.Consistent.UseFileBackend
+		}
+		if cloned.Consistent.Compression != nil {
+			res.Consistent.Compression = cloned.Consistent.Compression
+		}
+		if cloned.Consistent.FlushConcurrency != nil {
+			res.Consistent.FlushConcurrency = cloned.Consistent.FlushConcurrency
 		}
 		if cloned.Consistent.MemoryUsage != nil {
 			res.Consistent.MemoryUsage = &ConsistentMemoryUsage{
@@ -889,32 +925,63 @@ func ToAPIReplicaConfig(c *config.ReplicaConfig) *ReplicaConfig {
 		}
 	}
 	if cloned.Scheduler != nil {
-		res.Scheduler = &ChangefeedSchedulerConfig{
-			EnableTableAcrossNodes:     cloned.Scheduler.EnableTableAcrossNodes,
-			RegionThreshold:            cloned.Scheduler.RegionThreshold,
-			RegionCountPerSpan:         cloned.Scheduler.RegionCountPerSpan,
-			WriteKeyThreshold:          cloned.Scheduler.WriteKeyThreshold,
-			SchedulingTaskCountPerNode: cloned.Scheduler.SchedulingTaskCountPerNode,
-			EnableSplittableCheck:      cloned.Scheduler.EnableSplittableCheck,
-			BalanceScoreThreshold:      cloned.Scheduler.BalanceScoreThreshold,
-			MinTrafficPercentage:       cloned.Scheduler.MinTrafficPercentage,
-			MaxTrafficPercentage:       cloned.Scheduler.MaxTrafficPercentage,
+		if res.Scheduler == nil {
+			res.Scheduler = &ChangefeedSchedulerConfig{}
+		}
+
+		if cloned.Scheduler.EnableTableAcrossNodes != nil {
+			res.Scheduler.EnableTableAcrossNodes = cloned.Scheduler.EnableTableAcrossNodes
+		}
+		if cloned.Scheduler.RegionThreshold != nil {
+			res.Scheduler.RegionThreshold = cloned.Scheduler.RegionThreshold
+		}
+		if cloned.Scheduler.RegionCountPerSpan != nil {
+			res.Scheduler.RegionCountPerSpan = cloned.Scheduler.RegionCountPerSpan
+		}
+		if cloned.Scheduler.WriteKeyThreshold != nil {
+			res.Scheduler.WriteKeyThreshold = cloned.Scheduler.WriteKeyThreshold
+		}
+		if cloned.Scheduler.SchedulingTaskCountPerNode != nil {
+			res.Scheduler.SchedulingTaskCountPerNode = cloned.Scheduler.SchedulingTaskCountPerNode
+		}
+		if cloned.Scheduler.EnableSplittableCheck != nil {
+			res.Scheduler.EnableSplittableCheck = cloned.Scheduler.EnableSplittableCheck
+		}
+		if cloned.Scheduler.BalanceScoreThreshold != nil {
+			res.Scheduler.BalanceScoreThreshold = cloned.Scheduler.BalanceScoreThreshold
+		}
+		if cloned.Scheduler.MinTrafficPercentage != nil {
+			res.Scheduler.MinTrafficPercentage = cloned.Scheduler.MinTrafficPercentage
+		}
+		if cloned.Scheduler.MaxTrafficPercentage != nil {
+			res.Scheduler.MaxTrafficPercentage = cloned.Scheduler.MaxTrafficPercentage
 		}
 	}
 
 	if cloned.Integrity != nil {
-		res.Integrity = &IntegrityConfig{
-			IntegrityCheckLevel:   cloned.Integrity.IntegrityCheckLevel,
-			CorruptionHandleLevel: cloned.Integrity.CorruptionHandleLevel,
+		if res.Integrity == nil {
+			res.Integrity = &IntegrityConfig{}
+		}
+
+		if cloned.Integrity.IntegrityCheckLevel != nil {
+			res.Integrity.IntegrityCheckLevel = cloned.Integrity.IntegrityCheckLevel
+		}
+		if cloned.Integrity.CorruptionHandleLevel != nil {
+			res.Integrity.CorruptionHandleLevel = cloned.Integrity.CorruptionHandleLevel
 		}
 	}
 	if cloned.ChangefeedErrorStuckDuration != nil {
 		res.ChangefeedErrorStuckDuration = &JSONDuration{*cloned.ChangefeedErrorStuckDuration}
 	}
 	if cloned.SyncedStatus != nil {
-		res.SyncedStatus = &SyncedStatusConfig{
-			SyncedCheckInterval: cloned.SyncedStatus.SyncedCheckInterval,
-			CheckpointInterval:  cloned.SyncedStatus.CheckpointInterval,
+		if res.SyncedStatus == nil {
+			res.SyncedStatus = &SyncedStatusConfig{}
+		}
+		if cloned.SyncedStatus.SyncedCheckInterval != nil {
+			res.SyncedStatus.SyncedCheckInterval = cloned.SyncedStatus.SyncedCheckInterval
+		}
+		if cloned.SyncedStatus.CheckpointInterval != nil {
+			res.SyncedStatus.CheckpointInterval = cloned.SyncedStatus.CheckpointInterval
 		}
 	}
 	return res

@@ -50,9 +50,7 @@ var defaultReplicaConfig = &ReplicaConfig{
 	SyncPointInterval:  util.AddressOf(10 * time.Minute),
 	SyncPointRetention: util.AddressOf(24 * time.Hour),
 	BDRMode:            util.AddressOf(false),
-	Filter: &FilterConfig{
-		Rules: []string{"*.*"},
-	},
+	Filter:             NewDefaultFilterConfig(),
 	Mounter: &MounterConfig{
 		WorkerNum: 16,
 	},
@@ -110,7 +108,10 @@ var defaultReplicaConfig = &ReplicaConfig{
 		CorruptionHandleLevel: util.AddressOf(integrity.CorruptionHandleLevelWarn),
 	},
 	ChangefeedErrorStuckDuration: util.AddressOf(time.Minute * 30),
-	SyncedStatus:                 &SyncedStatusConfig{SyncedCheckInterval: 5 * 60, CheckpointInterval: 15},
+	SyncedStatus: &SyncedStatusConfig{
+		SyncedCheckInterval: util.AddressOf(int64(5 * 60)),
+		CheckpointInterval:  util.AddressOf(int64(15)),
+	},
 }
 
 // GetDefaultReplicaConfig returns the default replica config.
