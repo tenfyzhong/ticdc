@@ -40,7 +40,7 @@ import (
 type Controller struct {
 	bootstrapped bool
 
-	schedulerController    *pkgscheduler.Controller
+	schedulerController    *scheduler.Controller
 	operatorController     *operator.Controller
 	redoOperatorController *operator.Controller
 	spanController         *span.Controller
@@ -162,8 +162,8 @@ func (c *Controller) HandleStatus(from node.ID, statusList []*heartbeatpb.TableS
 		}
 		nodeID := stm.GetNodeID()
 		if nodeID != from {
-			// todo: handle the case that the node id is mismatch
-			log.Warn("node id not match",
+			// todo: handle the case that the nodeID is mismatch
+			log.Warn("nodeID not match",
 				zap.String("changefeed", c.changefeedID.Name()),
 				zap.Any("from", from),
 				zap.Stringer("node", nodeID))
