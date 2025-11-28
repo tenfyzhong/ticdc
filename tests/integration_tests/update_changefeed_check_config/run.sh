@@ -82,7 +82,11 @@ EOF
 	# set `enable_splittable_check` to true
 	curl -XPUT "http://$CDC_HOST:$CDC_PORT/api/v2/changefeeds/$CFID?keyspace=$KEYSPACE_NAME" -d '{"replica_config": {"scheduler": {"enable_table_across_nodes": true}}}'
 
-	enable_default=$(echo "$sorted_default" | jq '.enable_table_across_nodes = true')
+	if [ "$SINK_TYPE" = mysql ]; then
+		enable_default=$(echo "$sorted_default" | jq '.enable_table_across_nodes = true | .enable_splittable_check = true')
+	else
+		enable_default=$(echo "$sorted_default" | jq '.enable_table_across_nodes = true')
+	fi
 	echo "enable_default:$enable_default"
 
 	cf_info=$(curl "http://$CDC_HOST:$CDC_PORT/api/v2/changefeeds/$CFID?keyspace=$KEYSPACE_NAME")
