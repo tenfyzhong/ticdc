@@ -78,12 +78,6 @@ func LogMiddleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 		user, _, _ := c.Request.BasicAuth()
-		bodyBytes, _ := io.ReadAll(c.Request.Body)
-		if err := c.Request.Body.Close(); err != nil {
-			log.Panic("close body", zap.Error(err))
-		}
-		bodyReader := bytes.NewReader(bodyBytes)
-		c.Request.Body = io.NopCloser(bodyReader)
 
 		c.Next()
 
@@ -100,7 +94,6 @@ func LogMiddleware() gin.HandlerFunc {
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),
 			zap.String("query", query),
-			zap.String("body", string(bodyBytes)),
 			zap.String("ip", c.ClientIP()),
 			zap.String("user-agent", c.Request.UserAgent()), zap.String("client-version", version),
 			zap.String("username", user),
