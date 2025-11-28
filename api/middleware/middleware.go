@@ -15,8 +15,6 @@ package middleware
 
 import (
 	"bufio"
-	"bytes"
-	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -78,7 +76,6 @@ func LogMiddleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 		user, _, _ := c.Request.BasicAuth()
-
 		c.Next()
 
 		cost := time.Since(start)
