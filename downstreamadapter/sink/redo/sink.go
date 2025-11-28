@@ -26,7 +26,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/redo"
 	"github.com/pingcap/ticdc/pkg/redo/writer"
 	"github.com/pingcap/ticdc/pkg/redo/writer/factory"
-	sinkutil "github.com/pingcap/ticdc/pkg/sink/util"
 	"github.com/pingcap/ticdc/pkg/util"
 	"github.com/pingcap/ticdc/utils/chann"
 	"go.uber.org/atomic"
@@ -136,11 +135,12 @@ func (s *Sink) AddDMLEvent(event *commonEvent.DMLEvent) {
 				break
 			}
 			s.logBuffer.Push(&commonEvent.RedoRowEvent{
-				StartTs:   event.StartTs,
-				CommitTs:  event.CommitTs,
-				Event:     row,
-				TableInfo: event.TableInfo,
-				Callback:  event.PostFlush,
+				StartTs:         event.StartTs,
+				CommitTs:        event.CommitTs,
+				Event:           row,
+				PhysicalTableID: event.PhysicalTableID,
+				TableInfo:       event.TableInfo,
+				Callback:        event.PostFlush,
 			})
 		}
 		return int(event.Len()), event.GetSize(), nil
@@ -155,7 +155,8 @@ func (s *Sink) SinkType() common.SinkType {
 	return common.RedoSinkType
 }
 
-func (s *Sink) SetTableSchemaStore(tableSchemaStore *sinkutil.TableSchemaStore) {
+func (s *Sink) SetTableSchemaStore(tableSchemaStore *commonEvent.TableSchemaStore) {
+	s.ddlWriter.SetTableSchemaStore(tableSchemaStore)
 }
 
 func (s *Sink) Close(_ bool) {
