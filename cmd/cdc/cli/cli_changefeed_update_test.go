@@ -14,19 +14,15 @@
 package cli
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/log"
 	v2 "github.com/pingcap/ticdc/api/v2"
-	"github.com/pingcap/ticdc/pkg/api"
-	"github.com/pingcap/ticdc/pkg/common"
 	"github.com/pingcap/ticdc/pkg/config"
 	putil "github.com/pingcap/ticdc/pkg/util"
 	"github.com/stretchr/testify/require"
