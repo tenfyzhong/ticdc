@@ -29,8 +29,6 @@ function prepare() {
 	rm -rf $WORK_DIR && mkdir -p $WORK_DIR
 
 	start_tidb_cluster --workdir $WORK_DIR
-
-	cd $WORK_DIR
 }
 
 trap 'stop_tidb_cluster; collect_logs $WORK_DIR' EXIT
