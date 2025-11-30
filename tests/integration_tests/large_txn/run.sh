@@ -11,6 +11,7 @@ SINK_TYPE=$1
 function prepare() {
 	rm -rf $WORK_DIR && mkdir -p $WORK_DIR
 	start_tidb_cluster --workdir $WORK_DIR
+	cd $WORK_DIR
 
 	# Create database in upstream and downstream
 	run_sql "CREATE DATABASE large_txn" ${UP_TIDB_HOST} ${UP_TIDB_PORT}

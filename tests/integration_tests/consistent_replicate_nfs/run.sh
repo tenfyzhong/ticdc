@@ -25,6 +25,8 @@ function run() {
 
 	start_tidb_cluster --workdir $WORK_DIR
 
+	cd $WORK_DIR
+
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 
 	SINK_URI="mysql://normal:123456@127.0.0.1:3306/"

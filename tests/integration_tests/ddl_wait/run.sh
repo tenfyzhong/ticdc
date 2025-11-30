@@ -20,6 +20,8 @@ function run() {
 
 	start_tidb_cluster --workdir $WORK_DIR
 
+	cd $WORK_DIR
+
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 
 	cd $CUR

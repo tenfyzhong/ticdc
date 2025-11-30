@@ -18,6 +18,8 @@ function run() {
 
 	start_tidb_cluster --workdir $WORK_DIR
 
+	cd $WORK_DIR
+
 	TOPIC_NAME="canal-json-claim-check"
 
 	# record tso before we create tables to skip the system table DDLs

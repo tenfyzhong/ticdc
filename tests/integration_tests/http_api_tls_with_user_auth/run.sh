@@ -32,6 +32,8 @@ function run() {
 		--ssl-cert=$TLS_DIR/server.pem \
 		--ssl-key=$TLS_DIR/server-key.pem
 
+	cd $WORK_DIR
+
 	echo " \
   [security]
    ca-path = \"$TLS_DIR/ca.pem\"
