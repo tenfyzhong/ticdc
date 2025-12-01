@@ -11,6 +11,8 @@ fi
 CASE_DIR="$CUR/../$TEST_NAME"
 TEST_DATA_DIR="$CASE_DIR/$TEST_OUT_DATA_DIR"
 
+mkdir -p "$TEST_DATA_DIR"
+
 echo "TEST_DATA_DIR: $TEST_DATA_DIR"
 
 # Random generate the sockets config.
