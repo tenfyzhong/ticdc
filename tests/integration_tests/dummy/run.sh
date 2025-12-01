@@ -18,7 +18,6 @@
 set -e
 
 CUR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-echo "CUR:$CUR"
 source $CUR/../_utils/test_prepare
 WORK_DIR=$OUT_DIR/$TEST_NAME
 CDC_BINARY=cdc.test
@@ -33,8 +32,7 @@ function prepare() {
 	# record tso before we create tables to skip the system table DDLs
 	start_ts=$(run_cdc_cli_tso_query ${UP_PD_HOST_1} ${UP_PD_PORT_1})
 
-	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --logsuffix "0" --addr "127.0.0.1:8300"
-	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY --logsuffix "1" --addr "127.0.0.1:8301"
+	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 
 	TOPIC_NAME="ticdc-default-value-test-$RANDOM"
 	case $SINK_TYPE in
