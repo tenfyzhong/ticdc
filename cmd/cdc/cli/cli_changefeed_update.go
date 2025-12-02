@@ -93,8 +93,6 @@ func (o *updateChangefeedOptions) complete(f factory.Factory) error {
 func (o *updateChangefeedOptions) run(cmd *cobra.Command) error {
 	ctx := context.Background()
 
-	log.Info("update changefeed", zap.Any("o", o))
-
 	old, err := o.apiV2Client.Changefeeds().Get(ctx, o.keyspace, o.changefeedID)
 	if err != nil {
 		return err
