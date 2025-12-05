@@ -20,8 +20,6 @@ function run() {
 
 	start_tidb_cluster --workdir $WORK_DIR
 
-	cd $WORK_DIR
-
 	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 
 	cd $CUR
@@ -35,6 +33,10 @@ function run() {
 
 	run_sql "alter table test.t modify column col decimal(30,10);"
 	run_sql "alter table test.t add index (col);"
+	run_sql "alter table test.t add index (col);"
+	sleep 3
+	cleanup_process $CDC_BINARY
+	run_cdc_server --workdir $WORK_DIR --binary $CDC_BINARY
 	# make sure all tables are equal in upstream and downstream
 	check_sync_diff $WORK_DIR $CUR/conf/diff_config.toml 180
 
