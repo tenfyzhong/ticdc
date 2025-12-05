@@ -50,6 +50,7 @@ else ifeq (${OS}, "darwin")
 	CGO := 1
 endif
 
+
 # Check if sed is GNU sed and set SED_IN_PLACE accordingly.
 # GNU sed supports -i without a suffix, while BSD sed requires one.
 # `sed --version` is a GNU-specific flag.
