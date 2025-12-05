@@ -16,14 +16,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.0
 	github.com/mattn/goveralls v0.0.8
 	github.com/pingcap/failpoint v0.0.0-20210316064728-7acb0f0a3dfd
-<<<<<<< HEAD
 	github.com/tinylib/msgp v1.5.0
-||||||| parent of 7f3a982e (Adapt sed in-place editing for cross-platform compatibility (#3271))
-	github.com/swaggo/swag v1.7.8
-	github.com/tinylib/msgp v1.1.6
-=======
-	github.com/tinylib/msgp v1.1.6
->>>>>>> 7f3a982e (Adapt sed in-place editing for cross-platform compatibility (#3271))
 	github.com/vektra/mockery/v2 v2.53.4
 	github.com/zhouqiang-cl/gocovmerge v0.0.0-20190125174600-5256314471af
 	golang.org/x/tools v0.36.0
