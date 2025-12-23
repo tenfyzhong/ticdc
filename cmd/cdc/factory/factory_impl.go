@@ -19,13 +19,10 @@ import (
 	"time"
 
 	"github.com/pingcap/log"
-	"github.com/pingcap/ticdc/cmd/util"
 	apiv2client "github.com/pingcap/ticdc/pkg/api/v2"
 	"github.com/pingcap/ticdc/pkg/errors"
 	"github.com/pingcap/ticdc/pkg/etcd"
 	"github.com/pingcap/ticdc/pkg/version"
-	pdclient "github.com/tikv/pd/client"
-	pdopt "github.com/tikv/pd/client"
 	etcdlogutil "go.etcd.io/etcd/client/pkg/v3/logutil"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
@@ -39,15 +36,17 @@ const (
 
 type factoryImpl struct {
 	ClientGetter
+	ctx               context.Context
 	fetchedServerAddr string
 }
 
 // NewFactory creates a client build factory.
-func NewFactory(clientGetter ClientGetter) Factory {
+func NewFactory(ctx context.Context, clientGetter ClientGetter) Factory {
 	if clientGetter == nil {
 		panic("attempt to instantiate factory with nil clientGetter")
 	}
 	f := &factoryImpl{
+		ctx:          ctx,
 		ClientGetter: clientGetter,
 	}
 
@@ -56,7 +55,6 @@ func NewFactory(clientGetter ClientGetter) Factory {
 
 // EtcdClient creates new cdc etcd client.
 func (f *factoryImpl) EtcdClient() (*etcd.CDCEtcdClientImpl, error) {
-	ctx := context.Background()
 	tlsConfig, err := f.ToTLSConfig()
 	if err != nil {
 		return nil, err
@@ -78,7 +76,7 @@ func (f *factoryImpl) EtcdClient() (*etcd.CDCEtcdClientImpl, error) {
 	pdEndpoints := strings.Split(pdAddr, ",")
 
 	etcdClient, err := clientv3.New(clientv3.Config{
-		Context:     ctx,
+		Context:     f.ctx,
 		Endpoints:   pdEndpoints,
 		TLS:         tlsConfig,
 		LogConfig:   &logConfig,
@@ -104,7 +102,7 @@ func (f *factoryImpl) EtcdClient() (*etcd.CDCEtcdClientImpl, error) {
 			"Fail to open PD client. Please check the pd address(es) \"%s\"", pdAddr)
 	}
 
-	client, err := etcd.NewCDCEtcdClient(ctx, etcdClient, etcd.DefaultCDCClusterID)
+	client, err := etcd.NewCDCEtcdClient(f.ctx, etcdClient, etcd.DefaultCDCClusterID)
 	if err != nil {
 		return nil, errors.ErrEtcdAPIError.GenWithStack(
 			"Etcd operation error. Please check the cluster's status " +
@@ -112,59 +110,6 @@ func (f *factoryImpl) EtcdClient() (*etcd.CDCEtcdClientImpl, error) {
 	}
 
 	return client, err
-}
-
-// PdClient creates new pd client.
-func (f *factoryImpl) PdClient() (pdclient.Client, error) {
-	ctx := context.Background()
-
-	credential := f.GetCredential()
-	grpcTLSOption, err := f.ToGRPCDialOption()
-	if err != nil {
-		return nil, err
-	}
-
-	pdAddr := f.GetPdAddr()
-	if len(pdAddr) == 0 {
-		return nil, errors.ErrInvalidServerOption.
-			GenWithStack("Empty PD address. Please use --pd to specify PD cluster addresses")
-	}
-	pdEndpoints := strings.Split(pdAddr, ",")
-	for _, ep := range pdEndpoints {
-		if err = util.VerifyPdEndpoint(ep, credential.IsTLSEnabled()); err != nil {
-			return nil, errors.ErrInvalidServerOption.Wrap(err).GenWithStackByArgs()
-		}
-	}
-
-	pdClient, err := pdopt.NewClientWithContext(
-		ctx, pdEndpoints, credential.PDSecurityOption(),
-		pdopt.WithMaxErrorRetry(maxGetPDClientRetryTimes),
-		// TODO(hi-rustin): add gRPC metrics to Options.
-		// See also: https://github.com/pingcap/tiflow/pull/2341#discussion_r673032407.
-		pdopt.WithGRPCDialOptions(
-			grpcTLSOption,
-			grpc.WithBlock(),
-			grpc.WithConnectParams(grpc.ConnectParams{
-				Backoff: backoff.Config{
-					BaseDelay:  time.Second,
-					Multiplier: 1.1,
-					Jitter:     0.1,
-					MaxDelay:   3 * time.Second,
-				},
-				MinConnectTimeout: 3 * time.Second,
-			}),
-		))
-	if err != nil {
-		return nil, errors.Annotatef(err,
-			"Fail to open PD client. Please check the pd address(es)  \"%s\"", pdAddr)
-	}
-
-	err = version.CheckClusterVersion(ctx, pdClient, pdEndpoints, credential, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return pdClient, nil
 }
 
 // APIV2Client returns cdc api v2 client.

@@ -1,3 +1,4 @@
+//go:build !pd_master
 // Copyright 2021 PingCAP, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +41,9 @@ type Manager interface {
 	// Manager may skip update when it thinks it is too frequent.
 	// Set `forceUpdate` to force Manager update.
 	TryUpdateGCSafePoint(ctx context.Context, checkpointTs common.Ts, forceUpdate bool) error
-	CheckStaleCheckpointTs(ctx context.Context, changefeedID common.ChangeFeedID, checkpointTs common.Ts) error
+	CheckStaleCheckpointTs(ctx context.Context, keyspaceID uint32, changefeedID common.ChangeFeedID, checkpointTs common.Ts) error
+	// TryUpdateKeyspaceGCBarrier tries to update gc barrier of a keyspace
+	TryUpdateKeyspaceGCBarrier(ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool) error
 }
 
 type gcManager struct {
@@ -121,8 +124,16 @@ func (m *gcManager) TryUpdateGCSafePoint(
 	return nil
 }
 
+func (m *gcManager) TryUpdateKeyspaceGCBarrier(
+	ctx context.Context, keyspaceID uint32, keyspaceName string, checkpointTs common.Ts, forceUpdate bool,
+) error {
+	// In legacy mode, we don't support keyspace-level GC barrier.
+	// We assume global GC safepoint covers everything or keyspaces are not used in this way.
+	return nil
+}
+
 func (m *gcManager) CheckStaleCheckpointTs(
-	ctx context.Context, changefeedID common.ChangeFeedID, checkpointTs common.Ts,
+	ctx context.Context, keyspaceID uint32, changefeedID common.ChangeFeedID, checkpointTs common.Ts,
 ) error {
 	return m.checkStaleCheckPointTsGlobal(changefeedID, checkpointTs)
 }

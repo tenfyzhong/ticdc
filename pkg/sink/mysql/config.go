@@ -33,7 +33,6 @@ import (
 	"github.com/pingcap/ticdc/pkg/security"
 	"github.com/pingcap/ticdc/pkg/util"
 	"github.com/pingcap/tidb/br/pkg/version"
-	"github.com/pingcap/tidb/pkg/sessionctx/variable"
 	"go.uber.org/zap"
 )
 
@@ -356,7 +355,7 @@ func NewMysqlConfigAndDB(
 		log.Warn("failed to query max_allowed_packet, use default value",
 			zap.String("changefeed", changefeedID.String()),
 			zap.Error(err))
-		cfg.MaxAllowedPacket = int64(variable.DefMaxAllowedPacket)
+		cfg.MaxAllowedPacket = getDefaultMaxAllowedPacket()
 	}
 	return cfg, db, nil
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/pingcap/ticdc/pkg/redo/reader"
 	pkgMysql "github.com/pingcap/ticdc/pkg/sink/mysql"
 	timodel "github.com/pingcap/tidb/pkg/meta/model"
-	parser_model "github.com/pingcap/tidb/pkg/parser/model"
+	"github.com/pingcap/tidb/pkg/parser/ast"
 	pmysql "github.com/pingcap/tidb/pkg/parser/mysql"
 	"github.com/stretchr/testify/require"
 )
@@ -133,7 +133,7 @@ func TestApply(t *testing.T) {
 	}()
 
 	tableInfo := common.NewTableInfo4Decoder("test", &timodel.TableInfo{
-		Name:  parser_model.NewCIStr("t1"),
+		Name:  ast.NewCIStr("t1"),
 		State: timodel.StatePublic,
 	})
 	dmls := []*commonEvent.RedoDMLEvent{
@@ -404,7 +404,7 @@ func TestApplyBigTxn(t *testing.T) {
 	}()
 
 	tableInfo := common.NewTableInfo4Decoder("test", &timodel.TableInfo{
-		Name:  parser_model.NewCIStr("t1"),
+		Name:  ast.NewCIStr("t1"),
 		State: timodel.StatePublic,
 	})
 

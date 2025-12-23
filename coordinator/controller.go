@@ -876,6 +876,10 @@ func (c *Controller) calculateGlobalGCSafepoint() uint64 {
 	return c.changefeedDB.CalculateGlobalGCSafepoint()
 }
 
+func (c *Controller) calculateKeyspaceGCBarrier() map[common.KeyspaceMeta]uint64 {
+	return c.changefeedDB.CalculateKeyspaceGCBarrier()
+}
+
 func shouldRunChangefeed(state config.FeedState) bool {
 	switch state {
 	case config.StateStopped, config.StateFailed, config.StateFinished:
