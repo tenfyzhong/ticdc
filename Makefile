@@ -5,7 +5,8 @@
 	cdc kafka_consumer storage_consumer pulsar_consumer filter_helper \
 	prepare_test_binaries \
 	unit_test_in_verify_ci integration_test_build integration_test_build_fast integration_test_mysql integration_test_kafka integration_test_storage integration_test_pulsar \
-	generate-next-gen-grafana
+	generate-next-gen-grafana \
+	ensure_dependencies
 
 
 FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1  }  }'
@@ -61,6 +62,17 @@ else
 	SED_IN_PLACE += -i ''
 endif
 
+# Dependency versions
+PD_CLIENT_LEGACY := v0.0.0-20250213080903-727c2086a763
+PD_LEGACY := v1.1.0-beta.0.20251113050911-303c6c3b403e
+TIDB_LEGACY := v1.1.0-beta.0.20250415080739-a02630cc24cf
+TIDB_PARSER_LEGACY := v0.0.0-20241120103608-82376c7732c1
+
+PD_CLIENT_MASTER := v0.0.0-20250901035025-22b7ce6d4993
+PD_MASTER := v1.1.0-beta.0.20240407022249-7179657d129b
+TIDB_MASTER := v1.1.0-beta.0.20250925123346-8ea80e6b2b42
+TIDB_PARSER_MASTER := v0.0.0-20250925154222-93731f04705d
+
 BUILD_FLAG =
 GOEXPERIMENT=
 ifeq ("${ENABLE_FIPS}", "1")
@@ -70,15 +82,15 @@ ifeq ("${ENABLE_FIPS}", "1")
 endif
 ifeq ("${NEXT_GEN}", "1")
 	ifeq ($(BUILD_FLAG),)
-		BUILD_FLAG := -tags nextgen
+		BUILD_FLAG := -tags nextgen,pd_master
 	else
-		BUILD_FLAG := $(BUILD_FLAG),nextgen
+		BUILD_FLAG := $(BUILD_FLAG),nextgen,pd_master
 	endif
 endif
 
 TEST_FLAG=intest
 ifeq ("${NEXT_GEN}", "1")
-	TEST_FLAG := $(TEST_FLAG),nextgen
+	TEST_FLAG := $(TEST_FLAG),nextgen,pd_master
 endif
 
 GOTEST := CGO_ENABLED=1 $(GO) test -p 3 --race --tags=$(TEST_FLAG)
@@ -122,7 +134,7 @@ FILES := $$(find . -name '*.go' -type f | grep -vE 'vendor|_gen|proto|pb\.go|pb\
 # the files included in recursive invocations of make
 MAKE_FILES = $(shell find . \( -name 'Makefile' -o -name '*.mk' \) -print)
 
-FAILPOINT_DIR := $$(for p in $(PACKAGES); do echo $${p\#"github.com/pingcap/$(PROJECT)/"}|grep -v "github.com/pingcap/$(PROJECT)"; done)
+FAILPOINT_DIR := $$(for p in $(PACKAGES); do echo $${p#"github.com/pingcap/$(PROJECT)/"}|grep -v "github.com/pingcap/$(PROJECT)"; done)
 FAILPOINT := tools/bin/failpoint-ctl
 FAILPOINT_ENABLE  := $$(echo $(FAILPOINT_DIR) | xargs $(FAILPOINT) enable >/dev/null)
 FAILPOINT_DISABLE := $$(echo $(FAILPOINT_DIR) | xargs $(FAILPOINT) disable >/dev/null)
@@ -153,7 +165,24 @@ build-cdc-with-failpoint: ## Build cdc with failpoint enabled.
 	$(GOBUILD) -ldflags '$(LDFLAGS)' -o bin/cdc ./cmd/cdc/main.go
 	$(FAILPOINT_DISABLE)
 
-cdc:
+ensure_dependencies:
+ifeq ("${NEXT_GEN}", "1")
+	@echo "Switching to Master dependencies (PD, TiDB)..."
+	@go mod edit -dropreplace github.com/tikv/pd/client
+	@go get github.com/tikv/pd/client@$(PD_CLIENT_MASTER)
+	@go get github.com/tikv/pd@$(PD_MASTER)
+	@go get github.com/pingcap/tidb@$(TIDB_MASTER)
+	@go get github.com/pingcap/tidb/pkg/parser@$(TIDB_PARSER_MASTER)
+else
+	@echo "Ensuring Legacy dependencies (PD, TiDB)..."
+	@go mod edit -replace github.com/tikv/pd/client=github.com/tikv/pd/client@$(PD_CLIENT_LEGACY)
+	@go get github.com/tikv/pd/client@$(PD_CLIENT_LEGACY)
+	@go get github.com/tikv/pd@$(PD_LEGACY)
+	@go get github.com/pingcap/tidb@$(TIDB_LEGACY)
+	@go get github.com/pingcap/tidb/pkg/parser@$(TIDB_PARSER_LEGACY)
+endif
+
+cdc: ensure_dependencies
 	$(GOBUILD) -ldflags '$(LDFLAGS)' -o bin/cdc ./cmd/cdc
 
 kafka_consumer:
@@ -268,7 +297,7 @@ unit_test_in_verify_ci_next_gen: check_failpoint_ctl tools/bin/gotestsum tools/b
 	$(FAILPOINT_ENABLE)
 	@echo "Running unit tests..."
 	@export log_level=error;\
-	CGO_ENABLED=1 tools/bin/gotestsum --junitfile cdc-junit-report.xml -- -v -timeout 300s -p $(P) --race --tags=intest,nextgen \
+	CGO_ENABLED=1 tools/bin/gotestsum --junitfile cdc-junit-report.xml -- -v -timeout 300s -p $(P) --race --tags=intest,nextgen,pd_master \
 	-parallel=16 \
 	-covermode=atomic -coverprofile="$(TEST_DIR)/cov.unit.out" $(PACKAGES) \
 	|| { $(FAILPOINT_DISABLE); exit 1; }
@@ -293,7 +322,7 @@ unit_test_pkg_next_gen: check_failpoint_ctl tools/bin/gotestsum tools/bin/gocov 
 	$(FAILPOINT_ENABLE)
 	@echo "Running unit tests..."
 	@export log_level=error;\
-	CGO_ENABLED=1 tools/bin/gotestsum --junitfile cdc-junit-report.xml -- -v -timeout 300s -p $(P) --race --tags=intest,nextgen \
+	CGO_ENABLED=1 tools/bin/gotestsum --junitfile cdc-junit-report.xml -- -v -timeout 300s -p $(P) --race --tags=intest,nextgen,pd_master \
 	-parallel=16 \
 	-covermode=atomic -coverprofile="$(TEST_DIR)/cov.unit.out" \
 	$(PKG) \
@@ -326,7 +355,7 @@ check-makefiles: format-makefiles
 	@git diff --exit-code -- $(MAKE_FILES) || (echo "Please format Makefiles by running 'make format-makefiles'" && false)
 
 format-makefiles: $(MAKE_FILES)
-	$(SED_IN_PLACE) -e 's/^\(\t*\)  /\1\t/g' -e 's/^\(\t*\) /\1/' -- $?
+	$(SED_IN_PLACE) -e 's/^(\t*)  /\1\t/g' -e 's/^(\t*) /\1/' -- $?
 
 check: check-copyright fmt tidy generate_mock go-generate check-diff-line-width check-ticdc-dashboard check-makefiles generate-next-gen-grafana
 	@git --no-pager diff --exit-code || (echo "Please add changed files!" && false)
